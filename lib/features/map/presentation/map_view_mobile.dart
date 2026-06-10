@@ -655,6 +655,24 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await tryPaint('water', 'fill-color', '"#0E2438"');
     await tryPaint('land', 'background-color', '"#0B1120"');
     await tryPaint('background', 'background-color', '"#0B1120"');
+
+    // Labels in the local language — Mapbox styles prefer English/latinized
+    // names by default, but the `name` field carries each place's local
+    // name, so Israel renders fully in Hebrew (and Paris in French).
+    try {
+      final layers = await map.style.getStyleLayers();
+      for (final layer in layers) {
+        if (layer?.type != 'symbol') continue;
+        try {
+          await map.style.setStyleLayerProperty(
+              layer!.id, 'text-field', '["get","name"]');
+        } catch (_) {
+          // Some symbol layers have no text (icon-only) — skip.
+        }
+      }
+    } catch (e, st) {
+      logError(e, st, context: 'map.localizeLabels');
+    }
   }
 
   Future<void> _createFogLayers(MapboxMap map) async {
