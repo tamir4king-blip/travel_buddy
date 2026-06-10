@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -24,11 +26,19 @@ import 'package:travel_buddy_mobile/shared/providers/nearby_achievements_provide
 const _mapboxToken = String.fromEnvironment('MAPBOX_TOKEN');
 const _keyPermissionsRequested = 'permissions_requested';
 
+/// Mapbox and the background service only have Android/iOS implementations.
+/// On desktop (Windows dev runs) their platform channels are missing.
+bool get _isMobilePlatform =>
+    defaultTargetPlatform == TargetPlatform.android ||
+    defaultTargetPlatform == TargetPlatform.iOS;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Mapbox
-  MapboxOptions.setAccessToken(_mapboxToken);
+  if (_isMobilePlatform) {
+    MapboxOptions.setAccessToken(_mapboxToken);
+  }
 
   // Initialize Supabase (only if credentials are provided)
   if (SupabaseConfig.supabaseUrl.isNotEmpty &&
@@ -54,11 +64,13 @@ Future<void> main() async {
 
   // Initialize background service (creates notification channel)
   // but do NOT start it yet — permissions may not be granted
-  try {
-    await BackgroundService.initialize();
-  } catch (e, st) {
-    // Non-fatal: service just won't be available. Sentry not yet initialised.
-    logError(e, st, context: 'backgroundService.initialize');
+  if (_isMobilePlatform) {
+    try {
+      await BackgroundService.initialize();
+    } catch (e, st) {
+      // Non-fatal: service just won't be available. Sentry not yet initialised.
+      logError(e, st, context: 'backgroundService.initialize');
+    }
   }
 
   // Check if live tracking was enabled before app closed
@@ -124,7 +136,8 @@ class _TravelBuddyAppState extends ConsumerState<TravelBuddyApp>
       }
 
       // Start background service only if safe to do so
-      if (await permissionService.canStartBackgroundService()) {
+      if (_isMobilePlatform &&
+          await permissionService.canStartBackgroundService()) {
         try {
           await BackgroundService.start();
         } catch (e, st) {
