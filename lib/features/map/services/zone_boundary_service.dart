@@ -96,15 +96,13 @@ class ZoneBoundaryService {
 
   DateTime _lastRequestAt = DateTime.fromMillisecondsSinceEpoch(0);
 
-  /// Maps the Mapbox camera zoom to a Nominatim admin "zoom band":
-  /// 3=country, 5=state, 8=county/district, 10=city, 12=town/borough,
-  /// 14=neighbourhood.
+  /// Maps the Mapbox camera zoom to a Nominatim admin "zoom band".
+  /// Four visibility layers, nearest to farthest:
+  ///   14=neighbourhood → 10=city → 5=area/district → 3=country.
   static int adminZoomFor(double mapZoom) {
-    if (mapZoom < 4.0) return 3;
-    if (mapZoom < 6.5) return 5;
-    if (mapZoom < 9.0) return 8;
-    if (mapZoom < 11.5) return 10;
-    if (mapZoom < 13.5) return 12;
+    if (mapZoom < 6.0) return 3;
+    if (mapZoom < 9.5) return 5;
+    if (mapZoom < 13.0) return 10;
     return 14;
   }
 
@@ -116,12 +114,8 @@ class ZoneBoundaryService {
         return 0.01;
       case 5:
         return 0.005;
-      case 8:
-        return 0.002;
       case 10:
         return 0.001;
-      case 12:
-        return 0.0005;
       default:
         return 0.0002;
     }

@@ -20,6 +20,7 @@ import 'package:travel_buddy_mobile/features/map/presentation/widgets/filter_she
 import 'package:travel_buddy_mobile/features/map/presentation/widgets/filter_sheets/unified_filter_sheet.dart';
 import 'package:travel_buddy_mobile/features/map/presentation/widgets/map_pin_popup.dart';
 import 'package:travel_buddy_mobile/features/map/providers/current_country_provider.dart';
+import 'package:travel_buddy_mobile/features/map/services/local_zone_registry.dart';
 import 'package:travel_buddy_mobile/features/map/services/zone_boundary_service.dart';
 import 'package:travel_buddy_mobile/features/map/providers/map_camera_provider.dart';
 import 'package:travel_buddy_mobile/features/map/providers/map_filter_provider.dart';
@@ -82,6 +83,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
   // the camera (debounced), with the admin level tied to the zoom. The
   // resolved zone name shows in a pill at the top of the screen.
   final ZoneBoundaryService _zoneBoundaryService = ZoneBoundaryService();
+  final LocalZoneRegistry _localZoneRegistry = LocalZoneRegistry();
   Timer? _zoneHoverDebounce;
   int _zoneHoverSeq = 0;
   String? _hoverZoneId;
@@ -543,12 +545,19 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final cam = await _mapController.getCameraState();
     if (cam == null || seq != _zoneHoverSeq || !mounted) return;
 
-    final boundary =
+    // Bundled neighborhood zones win at the neighbourhood layer — OSM has
+    // no polygons for them (e.g. Netanya's neighborhoods are point nodes).
+    ZoneBoundary? boundary;
+    if (ZoneBoundaryService.adminZoomFor(cam.zoom) >= 14) {
+      boundary = await _localZoneRegistry.boundaryAt(cam.lat, cam.lng);
+    }
+    boundary ??=
         await _zoneBoundaryService.boundaryAt(cam.lat, cam.lng, cam.zoom);
     // A newer camera movement superseded this lookup — drop the result.
     if (seq != _zoneHoverSeq || !mounted) return;
 
-    if (boundary == null) {
+    final resolved = boundary;
+    if (resolved == null) {
       if (_hoverZoneId != null) {
         _hoverZoneId = null;
         setState(() => _hoverZoneName = null);
@@ -556,10 +565,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
       }
       return;
     }
-    if (boundary.id == _hoverZoneId) return;
-    _hoverZoneId = boundary.id;
-    setState(() => _hoverZoneName = boundary.name);
-    await _mapController.setZoneHighlight(boundary.rings);
+    if (resolved.id == _hoverZoneId) return;
+    _hoverZoneId = resolved.id;
+    setState(() => _hoverZoneName = resolved.name);
+    await _mapController.setZoneHighlight(resolved.rings);
   }
 
   void _openDetailSheet(

@@ -3,14 +3,14 @@ import 'package:travel_buddy_mobile/features/map/services/zone_boundary_service.
 
 void main() {
   group('ZoneBoundaryService.adminZoomFor', () {
-    test('maps camera zoom to admin bands', () {
+    test('maps camera zoom to the four visibility layers', () {
       expect(ZoneBoundaryService.adminZoomFor(1.0), 3); // world → country
-      expect(ZoneBoundaryService.adminZoomFor(3.9), 3);
-      expect(ZoneBoundaryService.adminZoomFor(5.0), 5); // state
-      expect(ZoneBoundaryService.adminZoomFor(7.0), 8); // county/district
-      expect(ZoneBoundaryService.adminZoomFor(10.0), 10); // city
-      expect(ZoneBoundaryService.adminZoomFor(12.0), 12); // borough
-      expect(ZoneBoundaryService.adminZoomFor(15.0), 14); // neighbourhood
+      expect(ZoneBoundaryService.adminZoomFor(5.9), 3);
+      expect(ZoneBoundaryService.adminZoomFor(6.0), 5); // area/district
+      expect(ZoneBoundaryService.adminZoomFor(9.4), 5);
+      expect(ZoneBoundaryService.adminZoomFor(9.5), 10); // city
+      expect(ZoneBoundaryService.adminZoomFor(12.9), 10);
+      expect(ZoneBoundaryService.adminZoomFor(13.0), 14); // neighbourhood
       expect(ZoneBoundaryService.adminZoomFor(20.0), 14);
     });
   });

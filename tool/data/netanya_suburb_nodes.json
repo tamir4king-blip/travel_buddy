@@ -1,0 +1,409 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-06-10T16:45:46Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 278477003,
+  "lat": 32.2649277,
+  "lon": 34.8872503,
+  "tags": {
+    "alt_name:en": "B`eyr-Ganim;Bir Ghanim",
+    "name": "שכונת באר גנים",
+    "name:en": "Beer Ganim",
+    "name:fr": "Be'er Gannim",
+    "name:he": "באר גנים",
+    "name:ru": "Беэр-Ганим",
+    "place": "neighbourhood"
+  }
+},
+{
+  "type": "node",
+  "id": 278477034,
+  "lat": 32.2711110,
+  "lon": 34.9127779,
+  "tags": {
+    "gns_ref": "-781727",
+    "name": "שיכון יציב",
+    "name:en": "Shikun Yaziv",
+    "name:en1": "Shikun Yatsiv",
+    "name:fr": "Shikun Yaziv",
+    "name:he": "שיכון יציב",
+    "place": "suburb",
+    "source": "GEOnet Names Server (gns)"
+  }
+},
+{
+  "type": "node",
+  "id": 278477723,
+  "lat": 32.2772224,
+  "lon": 34.8902866,
+  "tags": {
+    "gns_ref": "-781612",
+    "name": "תל צור",
+    "name:en": "Tel Zur",
+    "name:en1": "Tel Tsur",
+    "name:fr": "Tel Tsur",
+    "name:he": "תל צור",
+    "place": "neighbourhood",
+    "source": "GEOnet Names Server (gns)"
+  }
+},
+{
+  "type": "node",
+  "id": 278477811,
+  "lat": 32.3391060,
+  "lon": 34.8916059,
+  "tags": {
+    "gns_ref": "-779476",
+    "name": "בית יצחק",
+    "name:en": "Beit Yizhaq",
+    "name:fr": "Beit Yitzhak",
+    "name:he": "בית יצחק",
+    "name:ru": "Бейт Ицхак",
+    "place": "suburb",
+    "source": "GEOnet Names Server (gns)",
+    "wikidata": "Q116739185"
+  }
+},
+{
+  "type": "node",
+  "id": 278478337,
+  "lat": 32.3277816,
+  "lon": 34.8890307,
+  "tags": {
+    "gns_ref": "-781358",
+    "name": "שער חפר",
+    "name:en": "Shaar Hefer",
+    "name:fr": "Shaar Hefer",
+    "name:he": "שער חפר",
+    "name:ru": "Шаар Хефер",
+    "place": "suburb",
+    "source": "GEOnet Names Server (gns)"
+  }
+},
+{
+  "type": "node",
+  "id": 414936637,
+  "lat": 32.3044180,
+  "lon": 34.8732309,
+  "tags": {
+    "name": "קרית השרון",
+    "name:en": "Kiryat HaSharon",
+    "name:fr": "Kiryat Hasharon",
+    "name:he": "קרית השרון",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 414936638,
+  "lat": 32.3152367,
+  "lon": 34.8867034,
+  "tags": {
+    "name": "נאות גנים",
+    "name:en": "Ne'ot Ganim",
+    "name:fr": "Ne'ot Ganim",
+    "name:he": "נאות גנים",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 414936640,
+  "lat": 32.3093510,
+  "lon": 34.8788445,
+  "tags": {
+    "name": "משכנות זבולון",
+    "name:en": "Mishkenot Zevulon",
+    "name:fr": "Mishkenot Zevulun",
+    "name:he": "משכנות זבולון",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 1024992839,
+  "lat": 32.2922189,
+  "lon": 34.9177090,
+  "tags": {
+    "name": "גבעת משה",
+    "name:en": "Givat Moshe",
+    "name:fr": "Giv'at Moshe",
+    "name:he": "גבעת משה",
+    "place": "neighbourhood"
+  }
+},
+{
+  "type": "node",
+  "id": 1671800962,
+  "lat": 32.2839532,
+  "lon": 34.8561016,
+  "tags": {
+    "name": "קריית נורדאו",
+    "name:en": "Kiryat Nordau",
+    "name:fr": "Kiryat Nordau",
+    "name:he": "קריית נורדאו",
+    "place": "suburb",
+    "wikidata": "Q16133227"
+  }
+},
+{
+  "type": "node",
+  "id": 1671805744,
+  "lat": 32.2771149,
+  "lon": 34.8530342,
+  "tags": {
+    "name": "נאות גולדה",
+    "name:en": "Neot Golda",
+    "name:fr": "Ne'ot Golda",
+    "name:he": "נאות גולדה",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 2392636626,
+  "lat": 32.3055499,
+  "lon": 34.8825127,
+  "tags": {
+    "name": "קריית רבין",
+    "name:en": "Kiryat Rabin",
+    "name:fr": "Kiryat Rabin",
+    "name:he": "קריית רבין",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 2392639415,
+  "lat": 32.2958474,
+  "lon": 34.8505601,
+  "tags": {
+    "name": "נאות שקד",
+    "name:en": "Neot Shaked",
+    "name:fr": "Neot Shaked",
+    "name:he": "נאות שקד",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 2392639424,
+  "lat": 32.2973883,
+  "lon": 34.8570189,
+  "tags": {
+    "name": "רמת ידין",
+    "name:en": "Ramat Yadin",
+    "name:fr": "Ramat Yadin",
+    "name:he": "רמת ידין",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810209,
+  "lat": 32.3397709,
+  "lon": 34.8583114,
+  "tags": {
+    "name": "מכנס",
+    "name:en": "Makhnes",
+    "name:fr": "Machnes",
+    "name:he": "מכנס",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810210,
+  "lat": 32.3453960,
+  "lon": 34.8595458,
+  "tags": {
+    "name": "נאות התכלת",
+    "name:en": "Ne'ot HaTkhelet",
+    "name:fr": "Ne'ot HaTkhelet",
+    "name:he": "נאות התכלת",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810211,
+  "lat": 32.3470084,
+  "lon": 34.8595994,
+  "tags": {
+    "name": "נווה שלום",
+    "name:en": "Neve Shalom",
+    "name:fr": "Neve Shalom",
+    "name:he": "נווה שלום",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810212,
+  "lat": 32.3434482,
+  "lon": 34.8664282,
+  "tags": {
+    "name": "פרדס הגדוד",
+    "name:en": "Pardes HaGdud",
+    "name:fr": "Pardes HaGdud",
+    "name:he": "פרדס הגדוד",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810213,
+  "lat": 32.3427327,
+  "lon": 34.8616020,
+  "tags": {
+    "name": "קריית צאנז",
+    "name:en": "Kiryat Zanz",
+    "name:fr": "Kiryat Sanz",
+    "name:he": "קריית צאנז",
+    "place": "suburb",
+    "wikidata": "Q6416327"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810214,
+  "lat": 32.3240623,
+  "lon": 34.8641735,
+  "tags": {
+    "name": "רמת אפרים",
+    "name:en": "Ramat Efrayim",
+    "name:fr": "Ramat Ephraim",
+    "name:he": "רמת אפרים",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810215,
+  "lat": 32.3377014,
+  "lon": 34.8634074,
+  "tags": {
+    "name": "שיכון המזרחי",
+    "name:en": "East Shikun",
+    "name:fr": "East Shikun",
+    "name:he": "שיכון המזרחי",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810369,
+  "lat": 32.3352606,
+  "lon": 34.8686785,
+  "tags": {
+    "name": "נאות הרצל",
+    "name:en": "Ne'ot Herzl",
+    "name:fr": "Ne'ot Hertsel",
+    "name:he": "נאות הרצל",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 3824810370,
+  "lat": 32.3502883,
+  "lon": 34.8606767,
+  "tags": {
+    "name": "עין התכלת",
+    "name:en": "Ein HaTkhelet",
+    "name:fr": "Ein HaTkhelet",
+    "name:he": "עין התכלת",
+    "place": "suburb"
+  }
+},
+{
+  "type": "node",
+  "id": 8849513289,
+  "lat": 32.2618719,
+  "lon": 34.8348821,
+  "tags": {
+    "description": "מכון וינגייט הוא תאגיד ממשלתי באחריות משרד הספורט. יש בו אימונים בענפי הספורט האולימפיים והפראלימפיים, פועלים ממנו חלק מאיגודי הספורט, בית הספר למאמנים ומדריכים, היחידות לספורט הישגי וקידום נשים בספורט. מאידך, המרכז האקדמי לוינסקי־וינגייט הוא גוף נפרד.",
+    "description:he": "מכון וינגייט הוא תאגיד ממשלתי באחריות משרד הספורט. יש בו אימונים בענפי הספורט האולימפיים והפראלימפיים, פועלים ממנו חלק מאיגודי הספורט, בית הספר למאמנים ומדריכים, היחידות לספורט הישגי וקידום נשים בספורט. מאידך, המרכז האקדמי לוינסקי־וינגייט הוא גוף נפרד.",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/b/b6/Wingate_Institute_%283144%29.jpg",
+    "name": "מכון וינגייט",
+    "name:en": "Wingate Institute",
+    "name:he": "מכון וינגייט",
+    "place": "suburb",
+    "wikidata": "Q863827",
+    "wikipedia": "he:מכון וינגייט",
+    "wikipedia:he": "מכון וינגייט"
+  }
+},
+{
+  "type": "node",
+  "id": 10764072443,
+  "lat": 32.2521161,
+  "lon": 34.8653247,
+  "tags": {
+    "name": "אחוזת פולג",
+    "name:en": "Ahuzat Poleg",
+    "name:he": "אחוזת פולג",
+    "place": "neighbourhood"
+  }
+},
+{
+  "type": "node",
+  "id": 11114812750,
+  "lat": 32.3106490,
+  "lon": 34.8953255,
+  "tags": {
+    "name": "מגדלי הים התיכון",
+    "name:he": "מגדלי הים התיכון",
+    "place": "neighbourhood"
+  }
+},
+{
+  "type": "node",
+  "id": 11146106800,
+  "lat": 32.2501099,
+  "lon": 34.8749309,
+  "tags": {
+    "name": "נוה הדסה",
+    "name:en": "Neve Hadassah",
+    "name:he": "נוה הדסה",
+    "place": "neighbourhood",
+    "wikidata": "Q2920180"
+  }
+},
+{
+  "type": "node",
+  "id": 11169986517,
+  "lat": 32.3431044,
+  "lon": 34.9108695,
+  "tags": {
+    "description": "קמפוס ירוק ובו המרכז האקדמי רופין, בית ספר איזורי, תיכון ע\"ש בן גוריון, מעונות סטודנטים, חטיבה ותיכון בית אקשטיין ועוד.",
+    "description:he": "קמפוס ירוק ובו המרכז האקדמי רופין, בית ספר איזורי, תיכון ע\"ש בן גוריון, מעונות סטודנטים, חטיבה ותיכון בית אקשטיין ועוד.",
+    "name": "קמפוס רופין",
+    "name:he": "קמפוס רופין",
+    "place": "neighbourhood",
+    "website": "https://www.openstreetmap.org/way/94788857"
+  }
+},
+{
+  "type": "node",
+  "id": 13194312122,
+  "lat": 32.2726362,
+  "lon": 34.8457613,
+  "tags": {
+    "description": "רמת פולג היום כוללת את רמת פולג המקורית ואת \"נאות מנחם בגין\"",
+    "name:en": "Ramat Poleg",
+    "name:he": "רמת פולג",
+    "place": "neighbourhood",
+    "website": "https://www.netanya.muni.il/Pages/Search.aspx?k=%D7%A8%D7%9E%D7%AA%20%D7%A4%D7%95%D7%9C%D7%92"
+  }
+}
+
+  ]
+}
