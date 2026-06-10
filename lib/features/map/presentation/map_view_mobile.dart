@@ -618,6 +618,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     final map = _map;
     if (map == null) return;
     try {
+      await _configureStandardStyle(map);
       await _applyBrandStyle(map);
       await _createFogLayers(map);
       await _createZoneHighlightLayers(map);
@@ -675,6 +676,26 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     }
   }
 
+  /// Mapbox Standard basemap configuration — night lighting with the POI /
+  /// transit clutter stripped, leaving place and road labels. Each property
+  /// is set separately so an unsupported one doesn't void the rest.
+  Future<void> _configureStandardStyle(MapboxMap map) async {
+    Future<void> tryConfig(String key, Object value) async {
+      try {
+        await map.style.setStyleImportConfigProperty('basemap', key, value);
+      } catch (e, st) {
+        logError(e, st, context: 'map.standardConfig.$key');
+      }
+    }
+
+    await tryConfig('lightPreset', 'night');
+    await tryConfig('showPointOfInterestLabels', false);
+    await tryConfig('showTransitLabels', false);
+    // Standard manages its own label layers (the classic text-field override
+    // can't reach them) but exposes a language config.
+    await tryConfig('language', 'he');
+  }
+
   Future<void> _createFogLayers(MapboxMap map) async {
     await map.style.addSource(GeoJsonSource(
       id: _kFogSourceId,
@@ -688,6 +709,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(FillLayer(
       id: _kFogLayerId,
       sourceId: _kFogSourceId,
+      slot: 'middle',
       fillColor: _colorToArgbInt(AppColors.bgDark),
       fillOpacity: _kFogOpacity,
       fillAntialias: true,
@@ -697,6 +719,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(LineLayer(
       id: _kFogEdgeLayerId,
       sourceId: _kFogEdgeSourceId,
+      slot: 'middle',
       lineColor: _colorToArgbInt(AppColors.primaryLight),
       lineWidth: 1.6,
       lineBlur: 4.0,
@@ -715,6 +738,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(FillLayer(
       id: _kZoneFillLayerId,
       sourceId: _kZoneSourceId,
+      slot: 'middle',
       fillColor: _colorToArgbInt(AppColors.primary),
       fillOpacity: 0.10,
       fillAntialias: true,
@@ -723,6 +747,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(LineLayer(
       id: _kZoneLineLayerId,
       sourceId: _kZoneSourceId,
+      slot: 'middle',
       lineColor: _colorToArgbInt(AppColors.primaryLight),
       lineWidth: 2.0,
       lineBlur: 2.5,
@@ -743,6 +768,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(CircleLayer(
       id: _kClusterGlowLayerId,
       sourceId: _kMarkerSourceId,
+      slot: 'top',
       filter: ['has', 'point_count'],
       circleColor: _colorToArgbInt(AppColors.primary),
       circleOpacity: 0.22,
@@ -757,6 +783,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(CircleLayer(
       id: _kClusterCoreLayerId,
       sourceId: _kMarkerSourceId,
+      slot: 'top',
       filter: ['has', 'point_count'],
       circleColor: _colorToArgbInt(AppColors.primary),
       circleStrokeColor: _colorToArgbInt(AppColors.primaryLight),
@@ -771,6 +798,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(SymbolLayer(
       id: _kClusterCountLayerId,
       sourceId: _kMarkerSourceId,
+      slot: 'top',
       filter: ['has', 'point_count'],
       textFieldExpression: ['get', 'point_count_abbreviated'],
       textFont: ['DIN Pro Medium', 'Arial Unicode MS Regular'],
@@ -785,6 +813,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     await map.style.addLayer(SymbolLayer(
       id: _kPinLayerId,
       sourceId: _kMarkerSourceId,
+      slot: 'top',
       filter: [
         '!', ['has', 'point_count'],
       ],
@@ -986,6 +1015,10 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
         center: Point(coordinates: Position(centerLng, centerLat)),
         zoom: defaultZoom,
       ),
+      // Classic dark style: renders our Hebrew/local label override and the
+      // zone-highlight layers correctly. Mapbox Standard (night preset) looks
+      // richer but has no Hebrew support and swallows slotted custom layers —
+      // revisit when the custom Studio style is ready (swap the URI here).
       styleUri: MapboxStyles.DARK,
       onMapCreated: _onMapCreated,
       onStyleLoadedListener: _onStyleLoaded,
