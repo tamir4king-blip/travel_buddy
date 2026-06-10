@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_buddy_mobile/features/auth/presentation/screens/auth_screen.dart';
-import 'package:travel_buddy_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:travel_buddy_mobile/features/achievements/presentation/screens/achievements_screen.dart';
 import 'package:travel_buddy_mobile/features/quests/presentation/screens/quests_screen.dart';
 import 'package:travel_buddy_mobile/features/profile/presentation/screens/profile_screen.dart';
@@ -116,8 +115,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/',
+            // The map IS the home — AppShell renders the persistent canvas
+            // and the menu sheet; the route child is just a placeholder.
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: HomeScreen(),
+              child: SizedBox.shrink(),
             ),
           ),
           GoRoute(

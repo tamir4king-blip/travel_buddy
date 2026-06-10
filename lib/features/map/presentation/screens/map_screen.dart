@@ -1705,7 +1705,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
             // fullscreen toggle and the filter pill share one baseline.
             Positioned(
               right: 16,
-              bottom: 40,
+              // Clears the collapsed menu-sheet strip at the screen bottom.
+              bottom: 128,
               child: FadeTransition(
                 opacity: _controlsFadeController,
                 child: Column(
@@ -1775,7 +1776,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
             // with the right-side control column so they share a baseline.
             Positioned(
               left: 16,
-              bottom: 40,
+              // Clears the collapsed menu-sheet strip at the screen bottom.
+              bottom: 128,
               child: FadeTransition(
                 opacity: _controlsFadeController,
                 child: MapFilterButton(

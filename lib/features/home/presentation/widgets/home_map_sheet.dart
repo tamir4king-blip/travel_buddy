@@ -1,33 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:travel_buddy_mobile/l10n/app_localizations.dart';
 import 'package:travel_buddy_mobile/core/theme/app_theme.dart';
 import 'package:travel_buddy_mobile/features/home/presentation/screens/home_screen.dart';
-import 'package:travel_buddy_mobile/shared/providers/quests_provider.dart';
-import 'package:travel_buddy_mobile/shared/providers/user_profile_provider.dart';
-import 'package:travel_buddy_mobile/shared/providers/zone_provider.dart';
 
-/// The Home tab as a living canvas: the persistent map shows through behind
-/// a draggable dashboard sheet, with floating status chips on the exposed
-/// map area. Bump/Zenly model — Home is a layer over the world, not a page.
-class HomeMapSheet extends StatefulWidget {
+/// The app's menu: a bottom sheet floating over the full-screen map.
+/// Collapsed it's just a grab handle — the map stays the star. Swipe up for
+/// the destinations grid and the full dashboard (welcome card, XP, stats).
+/// This replaces the bottom navigation bar.
+class HomeMapSheet extends ConsumerStatefulWidget {
   const HomeMapSheet({super.key});
 
   @override
-  State<HomeMapSheet> createState() => _HomeMapSheetState();
+  ConsumerState<HomeMapSheet> createState() => _HomeMapSheetState();
 }
 
-class _HomeMapSheetState extends State<HomeMapSheet> {
-  /// Sheet anchor points: collapsed shows just the handle strip (map almost
-  /// fully exposed), peek is the resting dashboard, full covers the canvas.
-  static const _collapsed = 0.16;
+class _HomeMapSheetState extends ConsumerState<HomeMapSheet> {
+  /// Sheet anchor points: collapsed shows the handle + menu icon row (map
+  /// fully exposed), peek adds the dashboard, full opens it entirely.
+  static const _collapsed = 0.118;
   static const _peek = 0.46;
   static const _full = 0.94;
 
-  double _lastSettled = _peek;
+  final _sheetController = DraggableScrollableController();
+  double _lastSettled = _collapsed;
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
 
   bool _onSheetNotification(DraggableScrollableNotification notification) {
     // Tick when the sheet settles on a new anchor — makes the snap physical.
@@ -42,76 +47,98 @@ class _HomeMapSheetState extends State<HomeMapSheet> {
     return false;
   }
 
+  void _openDestination(String route) {
+    HapticFeedback.selectionClick();
+    context.go(route);
+    // Collapse so the map greets the user when they come back.
+    _sheetController.animateTo(
+      _collapsed,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _toggleSheet() {
+    HapticFeedback.selectionClick();
+    final target = _sheetController.size < (_collapsed + _peek) / 2
+        ? _peek
+        : _collapsed;
+    _sheetController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Floating status chips on the exposed canvas.
-        const Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.sm,
-              ),
-              child: _CanvasChips(),
-            ),
-          ),
-        ),
+    final l10n = AppLocalizations.of(context)!;
 
-        // The dashboard sheet.
-        NotificationListener<DraggableScrollableNotification>(
-          onNotification: _onSheetNotification,
-          child: DraggableScrollableSheet(
-            initialChildSize: _peek,
-            minChildSize: _collapsed,
-            maxChildSize: _full,
-            snap: true,
-            snapSizes: const [_peek],
-            builder: (context, scrollController) {
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.bgDark,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(AppRadius.sheet),
+    final destinations = <_MenuDestination>[
+      _MenuDestination(LucideIcons.bookOpen, l10n.navLog, '/log'),
+      _MenuDestination(LucideIcons.swords, l10n.quests, '/quests'),
+      _MenuDestination(LucideIcons.medal, l10n.achievements, '/achievements'),
+      _MenuDestination(LucideIcons.sparkles, l10n.skills, '/skills'),
+      _MenuDestination(LucideIcons.trophy, l10n.navRankings, '/leaderboard'),
+      _MenuDestination(LucideIcons.user, l10n.navProfile, '/profile'),
+    ];
+
+    return NotificationListener<DraggableScrollableNotification>(
+      onNotification: _onSheetNotification,
+      child: DraggableScrollableSheet(
+        controller: _sheetController,
+        initialChildSize: _collapsed,
+        minChildSize: _collapsed,
+        maxChildSize: _full,
+        snap: true,
+        snapSizes: const [_peek],
+        builder: (context, scrollController) {
+          return DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.bgDark,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.sheet),
+              ),
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.primary.withValues(alpha: 0.25),
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  blurRadius: 24,
+                  offset: const Offset(0, -8),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(AppRadius.sheet),
+              ),
+              child: Column(
+                children: [
+                  // Tapping the handle toggles collapsed <-> menu.
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _toggleSheet,
+                    child: const _GrabHandle(),
                   ),
-                  border: Border(
-                    top: BorderSide(
-                      color: AppColors.primary.withValues(alpha: 0.25),
+                  _MenuGrid(
+                    destinations: destinations,
+                    onTap: _openDestination,
+                  ),
+                  Expanded(
+                    child: HomeScreen(
+                      sheetScrollController: scrollController,
                     ),
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      blurRadius: 24,
-                      offset: const Offset(0, -8),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(AppRadius.sheet),
-                  ),
-                  child: Column(
-                    children: [
-                      const _GrabHandle(),
-                      Expanded(
-                        child: HomeScreen(
-                          sheetScrollController: scrollController,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -138,114 +165,71 @@ class _GrabHandle extends StatelessWidget {
   }
 }
 
-/// Level / location / streak pills floating on the map canvas. Values only —
-/// icons carry the meaning, so no new localized strings are needed.
-class _CanvasChips extends ConsumerWidget {
-  const _CanvasChips();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userProfileProvider);
-    final zone = ref.watch(zoneProvider);
-    final streak = ref.watch(questsProvider.select((q) => q.currentStreak));
-
-    final location = zone.city ?? zone.country;
-
-    return Row(
-      children: [
-        _CanvasChip(
-          icon: LucideIcons.zap,
-          label: '${user.level}',
-          iconColor: AppColors.xpGreen,
-          onTap: () => context.go('/profile'),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        if (location != null)
-          Flexible(
-            child: _CanvasChip(
-              icon: LucideIcons.mapPin,
-              label: location,
-              iconColor: AppColors.primaryLight,
-              onTap: () => context.go('/map'),
-            ),
-          ),
-        const Spacer(),
-        if (streak > 0)
-          _CanvasChip(
-            icon: LucideIcons.flame,
-            label: '$streak',
-            iconColor: AppColors.accent,
-            onTap: () => context.go('/quests'),
-          ),
-      ],
-    ).animate().fadeIn(duration: AppMotion.emphasized).slideY(
-          begin: -0.3,
-          end: 0,
-          duration: AppMotion.emphasized,
-          curve: AppMotion.enter,
-        );
-  }
-}
-
-class _CanvasChip extends StatelessWidget {
+class _MenuDestination {
   final IconData icon;
   final String label;
-  final Color iconColor;
-  final VoidCallback onTap;
+  final String route;
+  const _MenuDestination(this.icon, this.label, this.route);
+}
 
-  const _CanvasChip({
-    required this.icon,
-    required this.label,
-    required this.iconColor,
-    required this.onTap,
-  });
+/// The navigation grid that replaced the bottom bar — one row of evenly
+/// spaced destinations right under the handle, so they're reachable the
+/// moment the sheet peeks open.
+class _MenuGrid extends StatelessWidget {
+  final List<_MenuDestination> destinations;
+  final void Function(String route) onTap;
+
+  const _MenuGrid({required this.destinations, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: 7,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.bgCard.withValues(alpha: 0.88),
-          borderRadius: BorderRadius.circular(AppRadius.chip + 6),
-          border: Border.all(
-            color: AppColors.bgCardLight.withValues(alpha: 0.9),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: iconColor),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.none,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          for (final d in destinations)
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onTap(d.route),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.bgCardLight,
+                        border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Icon(
+                        d.icon,
+                        size: 20,
+                        color: AppColors.primaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      d.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
