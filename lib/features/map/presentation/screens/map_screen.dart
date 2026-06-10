@@ -80,11 +80,15 @@ class _MapScreenState extends ConsumerState<MapScreen>
   String? _lastUnlockedAreasSignature;
 
   // Zone-hover highlight: the admin boundary under the map center follows
-  // the camera (debounced), with the admin level tied to the zoom. The
-  // resolved zone name shows in a pill at the top of the screen.
+  // the camera live, with the admin level tied to the zoom. The resolved
+  // zone name shows in a pill at the top of the screen. Bundled boundaries
+  // (countries / Israel districts+cities / Netanya neighborhoods) resolve
+  // locally on a short throttle; only uncovered areas fall back to a
+  // debounced Nominatim lookup.
   final ZoneBoundaryService _zoneBoundaryService = ZoneBoundaryService();
   final LocalZoneRegistry _localZoneRegistry = LocalZoneRegistry();
-  Timer? _zoneHoverDebounce;
+  Timer? _zoneHoverThrottle;
+  Timer? _zoneNetDebounce;
   int _zoneHoverSeq = 0;
   String? _hoverZoneId;
   String? _hoverZoneName;
@@ -178,6 +182,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
       systemNavigationBarContrastEnforced: true,
     ));
 
+    // Warm the bundled zone layers so the first hover resolves instantly.
+    _localZoneRegistry.preload();
+
     // Kick off a one-shot location fetch so we have a position to center on
     Future.microtask(() {
       if (!mounted) return;
@@ -214,7 +221,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ));
     // Save camera state using cached notifier — no ref access needed
     _saveCameraState();
-    _zoneHoverDebounce?.cancel();
+    _zoneHoverThrottle?.cancel();
+    _zoneNetDebounce?.cancel();
     _zoneBoundaryService.dispose();
     _sheetAnimController.dispose();
     _controlsFadeController.dispose();
@@ -246,8 +254,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     _controlsFadeController.forward();
 
     // Highlight the zone under the initial camera position.
-    _zoneHoverDebounce?.cancel();
-    _zoneHoverDebounce =
+    _zoneHoverThrottle?.cancel();
+    _zoneHoverThrottle =
         Timer(const Duration(milliseconds: 600), _updateHoveredZone);
   }
 
@@ -530,14 +538,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // Popup and overlay are dismissed only by the X button or when another
     // pin is selected.
 
-    // Zone-hover highlight follows the camera center once it settles.
-    _zoneHoverDebounce?.cancel();
-    _zoneHoverDebounce =
-        Timer(const Duration(milliseconds: 400), _updateHoveredZone);
+    // Zone-hover highlight tracks the camera live: trailing-edge throttle so
+    // bundled-data lookups run every ~120ms during a pan and once after it
+    // settles — no waiting for the camera to stop.
+    if (_zoneHoverThrottle?.isActive != true) {
+      _zoneHoverThrottle =
+          Timer(const Duration(milliseconds: 120), _updateHoveredZone);
+    }
   }
 
   /// Resolve the admin boundary under the map center (country → neighbourhood
-  /// depending on zoom) and highlight its borders.
+  /// depending on zoom) and highlight its borders. Bundled data resolves
+  /// instantly; uncovered points schedule a debounced network lookup.
   Future<void> _updateHoveredZone() async {
     if (!_isNativeMapSupported || !mounted) return;
     final seq = ++_zoneHoverSeq;
@@ -545,30 +557,43 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final cam = await _mapController.getCameraState();
     if (cam == null || seq != _zoneHoverSeq || !mounted) return;
 
-    // Bundled neighborhood zones win at the neighbourhood layer — OSM has
-    // no polygons for them (e.g. Netanya's neighborhoods are point nodes).
-    ZoneBoundary? boundary;
-    if (ZoneBoundaryService.adminZoomFor(cam.zoom) >= 14) {
-      boundary = await _localZoneRegistry.boundaryAt(cam.lat, cam.lng);
-    }
-    boundary ??=
-        await _zoneBoundaryService.boundaryAt(cam.lat, cam.lng, cam.zoom);
-    // A newer camera movement superseded this lookup — drop the result.
+    final band = ZoneBoundaryService.adminZoomFor(cam.zoom);
+    final local = await _localZoneRegistry.boundaryAt(cam.lat, cam.lng, band);
     if (seq != _zoneHoverSeq || !mounted) return;
 
-    final resolved = boundary;
-    if (resolved == null) {
-      if (_hoverZoneId != null) {
-        _hoverZoneId = null;
-        setState(() => _hoverZoneName = null);
-        await _mapController.clearZoneHighlight();
-      }
+    if (local != null) {
+      _zoneNetDebounce?.cancel();
+      _applyHoveredZone(local);
       return;
     }
-    if (resolved.id == _hoverZoneId) return;
-    _hoverZoneId = resolved.id;
-    setState(() => _hoverZoneName = resolved.name);
-    await _mapController.setZoneHighlight(resolved.rings);
+
+    // Not covered by bundled data (abroad city/suburb, sea, etc.) — keep the
+    // current highlight and ask Nominatim once the camera rests.
+    _zoneNetDebounce?.cancel();
+    _zoneNetDebounce = Timer(const Duration(milliseconds: 400), () async {
+      if (!mounted) return;
+      final netSeq = ++_zoneHoverSeq;
+      final boundary =
+          await _zoneBoundaryService.boundaryAt(cam.lat, cam.lng, cam.zoom);
+      if (netSeq != _zoneHoverSeq || !mounted) return;
+
+      if (boundary == null) {
+        if (_hoverZoneId != null) {
+          _hoverZoneId = null;
+          setState(() => _hoverZoneName = null);
+          await _mapController.clearZoneHighlight();
+        }
+        return;
+      }
+      _applyHoveredZone(boundary);
+    });
+  }
+
+  void _applyHoveredZone(ZoneBoundary zone) {
+    if (zone.id == _hoverZoneId) return;
+    _hoverZoneId = zone.id;
+    setState(() => _hoverZoneName = zone.name);
+    _mapController.setZoneHighlight(zone.rings);
   }
 
   void _openDetailSheet(
