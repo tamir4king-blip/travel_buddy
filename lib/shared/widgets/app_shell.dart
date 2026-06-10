@@ -572,34 +572,40 @@ class _AppShellState extends ConsumerState<AppShell>
       ],
     );
 
-    return Stack(
-      children: [
-        body,
-        if (alertAchievement != null)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: ProximityAlert(
-                  achievement: alertAchievement,
-                  distance: geo.hasLocation
-                      ? geo.distanceTo(alertAchievement.latitude!,
-                          alertAchievement.longitude!)
-                      : 0,
-                  onClaim: () {
-                    setState(() => _alertAchievementId = null);
-                  },
-                  onDismiss: () {
-                    setState(() => _alertAchievementId = null);
-                  },
+    // Transparent Material so every floating layer (home sheet, alert banner,
+    // explore button, nav bar) has a Material ancestor — Text without one
+    // renders with the debug yellow/red underline decoration.
+    return Material(
+      type: MaterialType.transparency,
+      child: Stack(
+        children: [
+          body,
+          if (alertAchievement != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: ProximityAlert(
+                    achievement: alertAchievement,
+                    distance: geo.hasLocation
+                        ? geo.distanceTo(alertAchievement.latitude!,
+                            alertAchievement.longitude!)
+                        : 0,
+                    onClaim: () {
+                      setState(() => _alertAchievementId = null);
+                    },
+                    onDismiss: () {
+                      setState(() => _alertAchievementId = null);
+                    },
+                  ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 
