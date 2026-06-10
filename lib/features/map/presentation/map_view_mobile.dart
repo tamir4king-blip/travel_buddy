@@ -25,6 +25,9 @@ const _kFogSourceId = 'tb-fog';
 const _kFogLayerId = 'tb-fog-fill';
 const _kFogEdgeSourceId = 'tb-fog-edge';
 const _kFogEdgeLayerId = 'tb-fog-edge-glow';
+const _kZoneSourceId = 'tb-zone-hover';
+const _kZoneFillLayerId = 'tb-zone-hover-fill';
+const _kZoneLineLayerId = 'tb-zone-hover-line';
 
 const _kEmptyFeatureCollection = '{"type":"FeatureCollection","features":[]}';
 
@@ -47,6 +50,10 @@ class PlatformMapController extends MapViewController {
   List<({double lat, double lng, double radius})> _fogCircles = const [];
   bool _fogDirty = false;
   bool _layersReady = false;
+
+  // Zone-hover highlight rings (kept so they can be pushed once layers exist).
+  List<List<List<double>>> _zoneRings = const [];
+  bool _zoneDirty = false;
 
   // Radius circle / single-polygon preview (cleared on each new selection)
   PolygonAnnotationManager? _radiusManager;
@@ -97,6 +104,7 @@ class PlatformMapController extends MapViewController {
   Future<void> markLayersReady() async {
     _layersReady = true;
     if (_fogDirty) await _pushFog();
+    if (_zoneDirty) await _pushZoneHighlight();
   }
 
   @override
@@ -369,6 +377,61 @@ class PlatformMapController extends MapViewController {
     }
   }
 
+  // ── Zone-hover highlight ──────────────────────────────────────────────────
+
+  @override
+  Future<void> setZoneHighlight(List<List<List<double>>> rings) async {
+    _zoneRings = rings;
+    _zoneDirty = true;
+    if (_layersReady) await _pushZoneHighlight();
+  }
+
+  @override
+  Future<void> clearZoneHighlight() async {
+    if (_zoneRings.isEmpty && !_zoneDirty) return;
+    _zoneRings = const [];
+    _zoneDirty = true;
+    if (_layersReady) await _pushZoneHighlight();
+  }
+
+  Future<void> _pushZoneHighlight() async {
+    final map = _mapboxMap;
+    if (map == null) return;
+    _zoneDirty = false;
+
+    String data;
+    if (_zoneRings.isEmpty) {
+      data = _kEmptyFeatureCollection;
+    } else {
+      // One MultiPolygon feature; rings arrive as [[lat,lng],...] and GeoJSON
+      // wants closed [lng,lat] rings.
+      final polygons = <List<List<List<double>>>>[];
+      for (final ring in _zoneRings) {
+        if (ring.length < 3) continue;
+        final coords = ring.map((p) => [p[1], p[0]]).toList();
+        if (coords.first[0] != coords.last[0] ||
+            coords.first[1] != coords.last[1]) {
+          coords.add(coords.first);
+        }
+        polygons.add([coords]);
+      }
+      data = jsonEncode({
+        'type': 'Feature',
+        'properties': <String, dynamic>{},
+        'geometry': {
+          'type': 'MultiPolygon',
+          'coordinates': polygons,
+        },
+      });
+    }
+
+    try {
+      await map.style.setStyleSourceProperty(_kZoneSourceId, 'data', data);
+    } catch (e, st) {
+      logError(e, st, context: 'map.pushZoneHighlight');
+    }
+  }
+
   /// Generate geo-circle points (lat, lng) around a center.
   static List<(double, double)> geoCircle(double lat, double lng, double radiusM, int segments) {
     const earthRadius = 6371000.0;
@@ -557,6 +620,7 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
     try {
       await _applyBrandStyle(map);
       await _createFogLayers(map);
+      await _createZoneHighlightLayers(map);
       await _createMarkerLayers(map);
       _layersReady = true;
       await widget.controller.markLayersReady();
@@ -619,6 +683,32 @@ class _PlatformMapViewWidgetState extends State<PlatformMapViewWidget> {
       lineWidth: 1.6,
       lineBlur: 4.0,
       lineOpacity: 0.7,
+    ));
+  }
+
+  /// Zone-hover highlight — sits above the fog (the inspected zone should
+  /// stay visible even in unexplored areas) and below the markers.
+  Future<void> _createZoneHighlightLayers(MapboxMap map) async {
+    await map.style.addSource(GeoJsonSource(
+      id: _kZoneSourceId,
+      data: _kEmptyFeatureCollection,
+    ));
+
+    await map.style.addLayer(FillLayer(
+      id: _kZoneFillLayerId,
+      sourceId: _kZoneSourceId,
+      fillColor: _colorToArgbInt(AppColors.primary),
+      fillOpacity: 0.10,
+      fillAntialias: true,
+    ));
+
+    await map.style.addLayer(LineLayer(
+      id: _kZoneLineLayerId,
+      sourceId: _kZoneSourceId,
+      lineColor: _colorToArgbInt(AppColors.primaryLight),
+      lineWidth: 2.0,
+      lineBlur: 2.5,
+      lineOpacity: 0.9,
     ));
   }
 

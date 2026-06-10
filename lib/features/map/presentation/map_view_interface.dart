@@ -60,6 +60,14 @@ abstract class MapViewController {
   /// Remove the fog-of-war overlay entirely.
   Future<void> clearFogOfWar();
 
+  /// Highlight an administrative zone (the "hover" boundary) — translucent
+  /// fill + glowing border. [rings] are outer rings as `[[lat,lng],...]`,
+  /// one per polygon part.
+  Future<void> setZoneHighlight(List<List<List<double>>> rings);
+
+  /// Remove the zone-hover highlight.
+  Future<void> clearZoneHighlight();
+
   void dispose();
 }
 

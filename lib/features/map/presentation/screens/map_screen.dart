@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,6 +20,7 @@ import 'package:travel_buddy_mobile/features/map/presentation/widgets/filter_she
 import 'package:travel_buddy_mobile/features/map/presentation/widgets/filter_sheets/unified_filter_sheet.dart';
 import 'package:travel_buddy_mobile/features/map/presentation/widgets/map_pin_popup.dart';
 import 'package:travel_buddy_mobile/features/map/providers/current_country_provider.dart';
+import 'package:travel_buddy_mobile/features/map/services/zone_boundary_service.dart';
 import 'package:travel_buddy_mobile/features/map/providers/map_camera_provider.dart';
 import 'package:travel_buddy_mobile/features/map/providers/map_filter_provider.dart';
 import 'package:travel_buddy_mobile/l10n/registry_l10n.dart';
@@ -40,6 +43,12 @@ part '../widgets/screen_parts/map_country_picker.dart';
 part '../widgets/screen_parts/map_sheet_widgets.dart';
 
 const _mapboxToken = String.fromEnvironment('MAPBOX_TOKEN');
+
+/// Mapbox only ships Android/iOS implementations — on desktop dev runs the
+/// native view can never initialize, so we render a static placeholder.
+bool get _isNativeMapSupported =>
+    defaultTargetPlatform == TargetPlatform.android ||
+    defaultTargetPlatform == TargetPlatform.iOS;
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -69,8 +78,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
   // Memoized per-collection overlay state so we don't re-render every frame.
   String? _lastUnlockedAreasSignature;
 
-  // Memoized fog-of-war state (unlocked ids) — fog only re-renders on change.
-  String? _lastFogSignature;
+  // Zone-hover highlight: the admin boundary under the map center follows
+  // the camera (debounced), with the admin level tied to the zoom. The
+  // resolved zone name shows in a pill at the top of the screen.
+  final ZoneBoundaryService _zoneBoundaryService = ZoneBoundaryService();
+  Timer? _zoneHoverDebounce;
+  int _zoneHoverSeq = 0;
+  String? _hoverZoneId;
+  String? _hoverZoneName;
 
   // Detail sheet state (achievements route to the canonical
   // AchievementDetailSheet — only quest/skill/chain use the inline sheet).
@@ -169,6 +184,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
         ref.read(geolocationProvider.notifier).getCurrentLocation();
       }
     });
+
+    // On desktop the placeholder is "ready" immediately — without this the
+    // loading shimmer covers the canvas forever waiting for onMapReady.
+    if (!_isNativeMapSupported) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _onMapReady());
+    }
   }
 
   @override
@@ -191,6 +212,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     ));
     // Save camera state using cached notifier — no ref access needed
     _saveCameraState();
+    _zoneHoverDebounce?.cancel();
+    _zoneBoundaryService.dispose();
     _sheetAnimController.dispose();
     _controlsFadeController.dispose();
     _immersiveController.dispose();
@@ -219,6 +242,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
     if (!mounted) return;
     setState(() => _mapInitialized = true);
     _controlsFadeController.forward();
+
+    // Highlight the zone under the initial camera position.
+    _zoneHoverDebounce?.cancel();
+    _zoneHoverDebounce =
+        Timer(const Duration(milliseconds: 600), _updateHoveredZone);
   }
 
   void _onMapClick(double lat, double lng) {
@@ -499,6 +527,39 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // the area overlay persists through pan/zoom, so nothing to do here.
     // Popup and overlay are dismissed only by the X button or when another
     // pin is selected.
+
+    // Zone-hover highlight follows the camera center once it settles.
+    _zoneHoverDebounce?.cancel();
+    _zoneHoverDebounce =
+        Timer(const Duration(milliseconds: 400), _updateHoveredZone);
+  }
+
+  /// Resolve the admin boundary under the map center (country → neighbourhood
+  /// depending on zoom) and highlight its borders.
+  Future<void> _updateHoveredZone() async {
+    if (!_isNativeMapSupported || !mounted) return;
+    final seq = ++_zoneHoverSeq;
+
+    final cam = await _mapController.getCameraState();
+    if (cam == null || seq != _zoneHoverSeq || !mounted) return;
+
+    final boundary =
+        await _zoneBoundaryService.boundaryAt(cam.lat, cam.lng, cam.zoom);
+    // A newer camera movement superseded this lookup — drop the result.
+    if (seq != _zoneHoverSeq || !mounted) return;
+
+    if (boundary == null) {
+      if (_hoverZoneId != null) {
+        _hoverZoneId = null;
+        setState(() => _hoverZoneName = null);
+        await _mapController.clearZoneHighlight();
+      }
+      return;
+    }
+    if (boundary.id == _hoverZoneId) return;
+    _hoverZoneId = boundary.id;
+    setState(() => _hoverZoneName = boundary.name);
+    await _mapController.setZoneHighlight(boundary.rings);
   }
 
   void _openDetailSheet(
@@ -778,9 +839,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // persistently so the user can see their coverage while navigating.
     _updateUnlockedAreasOverlay(achievements, filter);
 
-    // Fog of war — unexplored world stays dark; visited areas are revealed.
-    _updateFogOfWar(achievements);
-
     // Only update user location if it changed
     if (geo.hasLocation) {
       if (_lastUserLat != geo.latitude || _lastUserLng != geo.longitude) {
@@ -843,41 +901,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
       await _mapController.showUnlockedAreasOverlay(areas);
     }
   }
-
-  /// Minimum radius (meters) revealed around a point-based unlock — claim
-  /// radii are often tiny (50–500 m), too small to read as "explored".
-  static const _fogRevealMinRadius = 1500.0;
-
-  /// Recompute the fog-of-war holes from unlocked achievements. Polygon
-  /// achievements (zones, countries) punch their exact shape; point-based
-  /// ones reveal a circle around the place.
-  Future<void> _updateFogOfWar(AchievementsState achievements) async {
-    final polygons = <List<List<double>>>[];
-    final circles = <({double lat, double lng, double radius})>[];
-    final sig = StringBuffer();
-
-    for (final a in achievements.allAchievements) {
-      if (!a.isUnlocked) continue;
-      if (a.hasPolygon) {
-        polygons.add(a.claimPolygon!);
-        sig.write('${a.id}p;');
-      } else if (a.latitude != null && a.longitude != null) {
-        final r = (a.claimRadius ?? _fogRevealMinRadius);
-        circles.add((
-          lat: a.latitude!,
-          lng: a.longitude!,
-          radius: r < _fogRevealMinRadius ? _fogRevealMinRadius : r,
-        ));
-        sig.write('${a.id}c;');
-      }
-    }
-
-    final signature = sig.toString();
-    if (signature == _lastFogSignature) return;
-    _lastFogSignature = signature;
-    await _mapController.setFogOfWar(polygons: polygons, circles: circles);
-  }
-
 
   // ── Inline detail sheet content builders ──
 
@@ -1515,11 +1538,13 @@ class _MapScreenState extends ConsumerState<MapScreen>
     // Update map entities whenever state changes
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateMapState());
 
-    final mapView = PlatformMapViewWidget(
-      key: _mapViewKey,
-      controller: _mapController,
-      onMapReady: _onMapReady,
-    );
+    final Widget mapView = _isNativeMapSupported
+        ? PlatformMapViewWidget(
+            key: _mapViewKey,
+            controller: _mapController,
+            onMapReady: _onMapReady,
+          )
+        : const _DesktopMapPlaceholder();
 
     // Backdrop mode — the map is the canvas behind the Home sheet: bare,
     // full-bleed, interactive, with all chrome stripped. The GlobalKey above
@@ -1532,6 +1557,14 @@ class _MapScreenState extends ConsumerState<MapScreen>
             Positioned.fill(child: mapView),
             if (!_mapInitialized)
               Positioned.fill(child: _MapLoadingShimmer()),
+            // Auto-recognized zone name — below the canvas chips row.
+            if (_hoverZoneName != null)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 64,
+                left: 0,
+                right: 0,
+                child: Center(child: _ZoneNamePill(name: _hoverZoneName!)),
+              ),
           ],
         ),
       );
@@ -1621,6 +1654,16 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   if (!_mapInitialized)
                     Positioned.fill(
                       child: _MapLoadingShimmer(),
+                    ),
+
+                  // Auto-recognized zone name — top of the map canvas.
+                  if (_hoverZoneName != null)
+                    Positioned(
+                      top: 12,
+                      left: 0,
+                      right: 0,
+                      child:
+                          Center(child: _ZoneNamePill(name: _hoverZoneName!)),
                     ),
 
             // Right side: map controls (location, zoom, fullscreen).
@@ -1929,6 +1972,84 @@ class _MapScreenState extends ConsumerState<MapScreen>
           ],
         ),
       ),
+      ),
+    );
+  }
+}
+
+/// Floating pill showing the auto-recognized zone under the map center
+/// (neighbourhood / city / country depending on zoom).
+class _ZoneNamePill extends StatelessWidget {
+  final String name;
+
+  const _ZoneNamePill({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      child: Container(
+        key: ValueKey(name),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.bgDark.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.primaryLight.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(LucideIcons.mapPin,
+                size: 14, color: AppColors.primaryLight),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Static stand-in for the Mapbox canvas on platforms without a native map
+/// (Windows/Linux/macOS dev runs). Keeps the rest of the screen functional.
+class _DesktopMapPlaceholder extends StatelessWidget {
+  const _DesktopMapPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.bgDark,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            LucideIcons.map,
+            size: 48,
+            color: AppColors.textMuted.withValues(alpha: 0.4),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Map preview is not available on desktop',
+            style: TextStyle(
+              color: AppColors.textMuted.withValues(alpha: 0.6),
+              fontSize: 13,
+            ),
+          ),
+        ],
       ),
     );
   }
