@@ -1,3 +1,4 @@
+import 'package:travel_buddy_mobile/shared/data/israel/israel_activity_quests.dart';
 import 'package:travel_buddy_mobile/shared/models/side_quest.dart';
 
 /// Expanded quest registry - 150+ quests from Travel Trophies
@@ -1634,6 +1635,7 @@ const questRegistry = <SideQuest>[
   ...transportationQuests,
   ...shoppingQuests,
   ...netanyaQuests,
+  ...israelActivityQuests,
 ];
 
 /// Get quests by category

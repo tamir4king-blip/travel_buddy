@@ -105,6 +105,14 @@ class _ExploreTabState extends ConsumerState<_ExploreTab> {
         .where((a) => a.collectionId == 'zones')
         .toList();
 
+    // ISRAEL: the Israel Explorer lists, one collection per list
+    final israelAchievements = filtered.where(isIsraelAchievement).toList();
+    final israelByList = <String, List<Achievement>>{};
+    for (final a in israelAchievements) {
+      israelByList.putIfAbsent(a.collectionId!, () => []).add(a);
+    }
+    final locale = Localizations.localeOf(context);
+
     final totalAll = all.length;
     final unlockedAll = all.where((a) => a.isUnlocked).length;
 
@@ -139,6 +147,24 @@ class _ExploreTabState extends ConsumerState<_ExploreTab> {
           label: hasFilter ? 'Filtered Progress' : 'Overall Progress',
         ),
         const SizedBox(height: 16),
+
+        // ── ISRAEL tier — MTP-style lists of places across Israel ──
+        if (israelAchievements.isNotEmpty)
+          _TierSection(
+            tier: _GeoTier.israel,
+            achievements: israelAchievements,
+            collections: [
+              for (final l in IsraelList.values)
+                if (israelByList[l.id] case final items?)
+                  _CollectionInfo(
+                    label:
+                        '${l.emoji} ${RegistryL10n.collectionName(locale, l.id, l.name)}',
+                    icon: LucideIcons.mapPin,
+                    achievements: items,
+                    isCountryCollection: false,
+                  ),
+            ],
+          ),
 
         // ── GLOBAL tier ──
         if (globalAchievements.isNotEmpty)

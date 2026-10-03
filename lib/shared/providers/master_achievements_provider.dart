@@ -10,6 +10,7 @@ import 'package:travel_buddy_mobile/shared/providers/quests_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/user_profile_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/persistence_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/supabase_provider.dart';
+import 'package:travel_buddy_mobile/shared/utils/achievement_requirements.dart';
 
 class MasterAchievementsState {
   final List<MasterAchievement> allMasterAchievements;
@@ -284,6 +285,14 @@ class MasterAchievementsNotifier extends StateNotifier<MasterAchievementsState> 
         final streak = questsState.currentStreak;
         final progress = streak / req.targetValue;
         return (progress.clamp(0.0, 1.0), streak >= req.targetValue);
+
+      case MasterRequirementType.collectionProgress:
+      case MasterRequirementType.anyOfAchievements:
+      case MasterRequirementType.tagCount:
+      case MasterRequirementType.israelRegionCount:
+        return achievementRequirementProgress(
+                req, achievementsState.allAchievements) ??
+            (0.0, false);
     }
   }
 

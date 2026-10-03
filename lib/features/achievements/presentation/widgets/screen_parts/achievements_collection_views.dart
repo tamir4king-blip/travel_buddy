@@ -45,6 +45,7 @@ class _TierSection extends StatelessWidget {
       _GeoTier.continent => LucideIcons.globe,
       _GeoTier.country => LucideIcons.flag,
       _GeoTier.zone => LucideIcons.mapPin,
+      _GeoTier.israel => LucideIcons.map,
     };
 
     return Padding(

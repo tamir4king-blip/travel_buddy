@@ -1,3 +1,4 @@
+import 'package:travel_buddy_mobile/shared/data/israel/israel_master_achievements.dart';
 import 'package:travel_buddy_mobile/shared/models/master_achievement.dart';
 
 /// Master Achievement Registry - Elite meta-achievements
@@ -482,6 +483,8 @@ const masterAchievementRegistry = <MasterAchievement>[
       ),
     ],
   ),
+  // Israel Explorer masters (combos, regions, Traveler DNA, lists)
+  ...israelMasterAchievements,
 ];
 
 /// Get master achievement by ID

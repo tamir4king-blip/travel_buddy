@@ -10,6 +10,7 @@ import 'package:travel_buddy_mobile/shared/models/achievement.dart';
 import 'package:travel_buddy_mobile/shared/providers/achievements_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/geolocation_provider.dart';
 import 'package:travel_buddy_mobile/shared/widgets/achievement_unlock_popup.dart';
+import 'package:travel_buddy_mobile/shared/data/israel/israel_catalog.dart';
 import 'package:travel_buddy_mobile/features/achievements/presentation/widgets/achievement_detail_sheet.dart';
 
 // Achievements screen widgets - split out of this file as `part` libraries to
@@ -32,10 +33,11 @@ const _themedCollectionIds = {
 const _localCollectionIds = {'landmarks', 'beaches', 'parks', 'culture'};
 
 // Geographic difficulty tiers — each level in the cascade
-enum _GeoTier { zone, country, continent, global }
+enum _GeoTier { zone, israel, country, continent, global }
 
 Color _geoTierColor(_GeoTier tier) => switch (tier) {
   _GeoTier.zone => AppColors.bronze,
+  _GeoTier.israel => AppColors.primaryLight,
   _GeoTier.country => AppColors.silver,
   _GeoTier.continent => AppColors.gold,
   _GeoTier.global => AppColors.platinum,
@@ -43,6 +45,7 @@ Color _geoTierColor(_GeoTier tier) => switch (tier) {
 
 String _geoTierLabel(_GeoTier tier) => switch (tier) {
   _GeoTier.zone => 'Zone',
+  _GeoTier.israel => 'Israel Explorer',
   _GeoTier.country => 'Country',
   _GeoTier.continent => 'Continent',
   _GeoTier.global => 'Earth',

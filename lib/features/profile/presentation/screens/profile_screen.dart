@@ -20,6 +20,7 @@ import 'package:travel_buddy_mobile/shared/widgets/xp_progress_bar.dart';
 import 'package:travel_buddy_mobile/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:travel_buddy_mobile/features/profile/presentation/widgets/top_skills_section.dart';
 import 'package:travel_buddy_mobile/features/profile/presentation/widgets/recent_achievements_section.dart';
+import 'package:travel_buddy_mobile/features/profile/presentation/widgets/israel_explorer_section.dart';
 import 'package:travel_buddy_mobile/shared/widgets/visual_extras.dart';
 import 'package:travel_buddy_mobile/features/dev_panel/presentation/widgets/dev_entry_gesture.dart';
 
@@ -197,6 +198,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   ),
                 ],
               ),
+
+              const SizedBox(height: 28),
+
+              // 5b. Israel Explorer — rank, Traveler DNA, regions, lists
+              _SectionHeader(
+                title: Localizations.localeOf(context).languageCode == 'he'
+                    ? 'מגלי הארץ'
+                    : 'Israel Explorer',
+              ),
+              const SizedBox(height: 12),
+              const IsraelExplorerSection(),
 
               const SizedBox(height: 28),
 

@@ -28,6 +28,17 @@ class _AchievementFilterGroupsState extends State<_AchievementFilterGroups> {
       collectionIds: ['landmarks', 'beaches', 'parks', 'culture'],
     ),
     _FilterGroup(
+      id: 'israel',
+      label: 'Israel',
+      icon: LucideIcons.mapPin,
+      collectionIds: [
+        'il-regions', 'il-cities', 'il-villages', 'il-unesco',
+        'il-national-parks', 'il-nature', 'il-water', 'il-coast',
+        'il-heights', 'il-heritage', 'il-sacred', 'il-museums', 'il-food',
+        'il-experiences',
+      ],
+    ),
+    _FilterGroup(
       id: 'themed',
       label: 'Themed',
       icon: LucideIcons.star,

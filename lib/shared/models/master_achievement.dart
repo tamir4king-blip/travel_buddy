@@ -14,6 +14,17 @@ enum MasterRequirementType {
   questCategory,
   /// Reach a certain streak
   streakDays,
+  /// Unlock [MasterRequirement.targetValue] achievements in the collection
+  /// [MasterRequirement.targetId]
+  collectionProgress,
+  /// Unlock [MasterRequirement.targetValue] of the comma-separated
+  /// achievement ids in [MasterRequirement.targetId]
+  anyOfAchievements,
+  /// Unlock [MasterRequirement.targetValue] achievements tagged
+  /// [MasterRequirement.targetId] (e.g. an Israel facet tag)
+  tagCount,
+  /// Visit [MasterRequirement.targetValue] distinct Israel regions
+  israelRegionCount,
 }
 
 /// A single requirement for a master achievement
