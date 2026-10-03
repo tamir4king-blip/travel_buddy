@@ -5,7 +5,8 @@
 -- visit_count / last_visited_at / revisit_history from
 -- user_achievements, but none of it was defined in migrations.
 -- This migration makes it reproducible and closes the gaps:
---   * revisit columns exist (no-op where prod already has them).
+--   * revisit columns exist (no-op where prod already has them;
+--     prod's hand-made jsonb revisit_history becomes timestamptz[]).
 --   * Clients can no longer write the revisit columns directly
 --     (column-level grants) — only these RPCs change them.
 --   * register_revisit enforces the cooldown server-side and accepts
@@ -23,22 +24,66 @@
 -- ────────────────────────────────────────────────────────────
 alter table public.user_achievements
   add column if not exists visit_count     integer not null default 1,
-  add column if not exists last_visited_at timestamptz,
-  add column if not exists revisit_history timestamptz[] not null default '{}';
+  add column if not exists last_visited_at timestamptz;
 
--- If prod created revisit_history by hand with another type, stop here
--- rather than run the RPCs below against the wrong shape.
+-- Prod's hand-made visit_count may be nullable / lack the default.
+update public.user_achievements set visit_count = 1 where visit_count is null;
+alter table public.user_achievements
+  alter column visit_count set default 1,
+  alter column visit_count set not null;
+
+-- revisit_history: prod created it by hand as jsonb (an array of ISO
+-- strings). Convert it to timestamptz[] in place, keeping every parseable
+-- entry. PostgREST serializes both as a JSON array of timestamp strings,
+-- so already-installed app builds read it unchanged.
 do $$
 declare
   v_type text;
+  v_row  record;
+  v_txt  text;
+  v_arr  timestamptz[];
 begin
   select format_type(atttypid, atttypmod) into v_type
   from pg_attribute
   where attrelid = 'public.user_achievements'::regclass
     and attname = 'revisit_history' and not attisdropped;
 
-  if v_type is distinct from 'timestamp with time zone[]' then
-    raise exception 'user_achievements.revisit_history is %, expected timestamptz[]', v_type;
+  if v_type is null then
+    alter table public.user_achievements
+      add column revisit_history timestamptz[] not null default '{}';
+
+  elsif v_type = 'jsonb' then
+    alter table public.user_achievements
+      add column revisit_history_ts timestamptz[] not null default '{}';
+
+    for v_row in
+      select id, revisit_history from public.user_achievements
+    loop
+      v_arr := '{}';
+      if jsonb_typeof(v_row.revisit_history) = 'array' then
+        for v_txt in
+          select jsonb_array_elements_text(v_row.revisit_history)
+        loop
+          begin
+            v_arr := array_append(v_arr, v_txt::timestamptz);
+          exception when others then
+            null;  -- skip a malformed entry rather than abort the migration
+          end;
+        end loop;
+      end if;
+
+      update public.user_achievements
+      set revisit_history_ts = (select coalesce(array_agg(t order by t), '{}')
+                                from unnest(v_arr) t)
+      where id = v_row.id;
+    end loop;
+
+    alter table public.user_achievements drop column revisit_history;
+    alter table public.user_achievements
+      rename column revisit_history_ts to revisit_history;
+
+  elsif v_type <> 'timestamp with time zone[]' then
+    raise exception 'user_achievements.revisit_history is %, expected jsonb or timestamptz[]', v_type;
   end if;
 end $$;
 
