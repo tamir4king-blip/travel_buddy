@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_buddy_mobile/core/utils/error_logger.dart';
 import 'package:travel_buddy_mobile/shared/models/achievement.dart';
 import 'package:travel_buddy_mobile/shared/providers/achievements_provider.dart';
+import 'package:travel_buddy_mobile/shared/utils/achievement_definitions_codec.dart';
 import 'package:travel_buddy_mobile/shared/utils/geo_utils.dart';
 
 class BackgroundService {
@@ -115,7 +116,12 @@ class _ProximityChecker {
   double? _lastLng;
 
   /// Pre-filter: only achievements that have coordinates and a claim radius.
-  late List<Achievement> _locationAchievements;
+  List<Achievement> _locationAchievements = const [];
+
+  /// Cached Supabase definitions JSON that [_locationAchievements] was built
+  /// from — rebuilt only when the main isolate writes a new cache.
+  String? _definitionsSource;
+  bool _definitionsLoaded = false;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -126,9 +132,29 @@ class _ProximityChecker {
     const initSettings = InitializationSettings(android: androidSettings);
     await _notifications.initialize(initSettings);
 
-    _locationAchievements = achievementRegistry
-        .where((a) => a.hasGeofence)
-        .toList();
+    _refreshDefinitions();
+  }
+
+  /// Use the same definitions as the main isolate: hardcoded registry merged
+  /// with the Supabase cache, so remote-only achievements and edited
+  /// polygons/radii are detected in the background too.
+  void _refreshDefinitions() {
+    final cached = _prefs.getString(achievementDefinitionsCacheKey);
+    if (_definitionsLoaded && cached == _definitionsSource) return;
+
+    var definitions = achievementRegistry;
+    if (cached != null) {
+      try {
+        definitions = mergeDefinitions(achievementRegistry, parseDefinitions(cached));
+      } catch (e, st) {
+        // Corrupted cache — fall back to the hardcoded registry.
+        logError(e, st, context: 'backgroundService.loadDefinitions');
+      }
+    }
+
+    _locationAchievements = definitions.where((a) => a.hasGeofence).toList();
+    _definitionsSource = cached;
+    _definitionsLoaded = true;
   }
 
   Future<void> poll(ServiceInstance service) async {
@@ -154,6 +180,7 @@ class _ProximityChecker {
 
       // Reload SharedPreferences to pick up changes from the main isolate
       await _prefs.reload();
+      _refreshDefinitions();
 
       // Load current state from SharedPreferences
       final unlockedData = _loadUnlockedData();

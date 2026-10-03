@@ -221,6 +221,10 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
       final userId = client.auth.currentUser?.id;
       if (userId == null) return;
 
+      // Send revisits recorded offline first, so the rows pulled below
+      // already reflect the server's verdict on them.
+      await _flushRevisitQueue();
+
       final rows = await client
           .from('user_achievements')
           .select()
@@ -327,18 +331,8 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
       final userId = client.auth.currentUser?.id;
       if (userId == null) return;
 
-      // Same column set as _upsertAchievementToRemote: visit_count,
-      // last_visited_at and revisit_history stay owned by register_revisit.
       final rows = state.unlockedAchievements
-          .map((a) => {
-                'user_id': userId,
-                'achievement_id': a.id,
-                'unlocked_at': a.unlockedAt?.toIso8601String(),
-                'visit_date': a.visitDate?.toIso8601String(),
-                'notes': a.notes,
-                'is_retroactive': a.isRetroactive,
-                'photos': a.photos,
-              })
+          .map((a) => _remoteRow(userId, a))
           .toList();
 
       await client
@@ -358,24 +352,33 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
       final userId = client.auth.currentUser?.id;
       if (userId == null) return;
 
-      // NOTE: visit_count, last_visited_at, revisit_history are owned by
-      // the `register_revisit` RPC — never written via plain upsert to
-      // prevent modded clients from overwriting server state. The column
-      // defaults handle the initial unlock row (visit_count = 1, others NULL).
-      await client.from('user_achievements').upsert({
-        'user_id': userId,
-        'achievement_id': a.id,
-        'unlocked_at': a.unlockedAt?.toIso8601String(),
-        'visit_date': a.visitDate?.toIso8601String(),
-        'notes': a.notes,
-        'is_retroactive': a.isRetroactive,
-        'photos': a.photos,
-      }, onConflict: 'user_id,achievement_id');
+      await client
+          .from('user_achievements')
+          .upsert(_remoteRow(userId, a), onConflict: 'user_id,achievement_id');
     } catch (e, st) {
       // Will retry on next sync
       logError(e, st, context: 'achievements.upsertToRemote', report: true);
     }
   }
+
+  /// The `user_achievements` columns clients may write.
+  ///
+  /// visit_count, last_visited_at and revisit_history are owned by the
+  /// revisit RPCs — the server's column grants reject them here. The column
+  /// defaults handle the initial unlock row (visit_count = 1, others empty).
+  ///
+  /// Timestamps go out as UTC: a local DateTime serializes without an
+  /// offset, which Postgres would read as UTC and shift by the device's
+  /// timezone (breaking the server-side revisit cooldown anchor).
+  static Map<String, dynamic> _remoteRow(String userId, Achievement a) => {
+        'user_id': userId,
+        'achievement_id': a.id,
+        'unlocked_at': a.unlockedAt?.toUtc().toIso8601String(),
+        'visit_date': a.visitDate?.toUtc().toIso8601String(),
+        'notes': a.notes,
+        'is_retroactive': a.isRetroactive,
+        'photos': a.photos,
+      };
 
   /// Save to local persistence only (no remote sync).
   Future<void> _persistLocally() async {
@@ -461,6 +464,9 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     final unlocked = achievement.copyWith(
       isUnlocked: true,
       unlockedAt: now,
+      // The user was physically there when the claim was detected, which
+      // may be hours before they tapped confirm.
+      visitDate: achievement.pendingClaimAt ?? now,
       isPendingClaim: false,
       clearPendingClaimAt: true,
       visitCount: 1,
@@ -510,8 +516,8 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
   /// Reload pending claims AND revisit updates from SharedPreferences
   /// (e.g. after the background service has written new entries while the
   /// app was suspended). Merges higher visit counts, latest lastVisitedAt,
-  /// and any new revisit history entries back into state, then syncs to
-  /// Supabase so the server matches.
+  /// and any new revisit history entries back into state, then validates
+  /// the new revisits with Supabase so the server matches.
   Future<void> refreshFromStorage() async {
     final persistence = ref.read(persistenceServiceProvider);
     await persistence.reload();
@@ -527,7 +533,9 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     var changed = false;
     final updatedAll = [...state.allAchievements];
     final updatedUnlocked = [...state.unlockedAchievements];
-    final achievementsToSync = <Achievement>[];
+    // Revisit timestamps the background service recorded that the main
+    // isolate hasn't seen yet, per achievement id.
+    final backgroundRevisits = <String, List<DateTime>>{};
 
     for (var i = 0; i < updatedAll.length; i++) {
       final a = updatedAll[i];
@@ -565,6 +573,11 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
             (savedPendingRevisit && !a.isPendingRevisit);
 
         if (needsUpdate) {
+          final newEntries = savedHistory
+              .where((d) => !a.revisitHistory.any((h) => h.isAtSameMomentAs(d)))
+              .toList();
+          if (newEntries.isNotEmpty) backgroundRevisits[a.id] = newEntries;
+
           final merged = updatedAll[i].copyWith(
             visitCount:
                 savedCount > updatedAll[i].visitCount ? savedCount : null,
@@ -582,73 +595,110 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
           final ui =
               updatedUnlocked.indexWhere((u) => u.id == a.id);
           if (ui != -1) updatedUnlocked[ui] = merged;
-          achievementsToSync.add(merged);
           changed = true;
         }
       }
     }
 
-    if (!changed) return;
+    if (changed) {
+      state = state.copyWith(
+        allAchievements: updatedAll,
+        unlockedAchievements: updatedUnlocked,
+      );
+      // Persist the merged state locally so we don't drift from background
+      await _persistLocally();
 
-    state = state.copyWith(
-      allAchievements: updatedAll,
-      unlockedAchievements: updatedUnlocked,
-    );
-    // Persist the merged state locally so we don't drift from background
-    await _persistLocally();
+      // Queue each background-recorded revisit (with its real timestamp) for
+      // server validation. The server accepts or rejects each one by its own
+      // cooldown, so direct SharedPreferences edits can't inflate counts.
+      for (final entry in backgroundRevisits.entries) {
+        await _queueRevisitSync(entry.key, entry.value);
+      }
+    }
 
-    // Validate each background-recorded revisit via the server-authoritative
-    // RPC. The server will accept or reject based on its own cooldown logic,
-    // preventing modded clients / direct SharedPreferences edits from
-    // inflating counts. We call the RPC once per achievement — if the user
-    // triggered multiple revisits while offline, only one will be accepted
-    // per cooldown window (which is the correct behavior).
-    for (final a in achievementsToSync) {
-      _validateBackgroundRevisit(a.id);
+    // Also retries anything left from an earlier offline session.
+    await _flushRevisitQueue();
+  }
+
+  // ── Server revisit sync ────────────────────────────────────────────────────
+
+  /// Revisits recorded without server confirmation (offline GPS revisits and
+  /// background-service revisits), queued until `register_revisit` decides.
+  Future<void> _queueRevisitSync(String achievementId, List<DateTime> at) async {
+    if (at.isEmpty) return;
+    final persistence = ref.read(persistenceServiceProvider);
+    final queue = persistence.loadPendingRevisitSync();
+    queue[achievementId] = [
+      ...?queue[achievementId],
+      ...at.map((d) => d.toUtc().toIso8601String()),
+    ];
+    await persistence.savePendingRevisitSync(queue);
+  }
+
+  bool _flushingRevisits = false;
+
+  /// Replay queued revisits through `register_revisit`, oldest first. Each
+  /// entry leaves the queue once the server has answered (accept or
+  /// reject); a network error stops the flush and keeps the rest for the
+  /// next sync.
+  Future<void> _flushRevisitQueue() async {
+    if (_flushingRevisits || !SupabaseConfig.isConfigured) return;
+    final client = ref.read(supabaseClientProvider);
+    if (client.auth.currentUser?.id == null) return;
+
+    _flushingRevisits = true;
+    final persistence = ref.read(persistenceServiceProvider);
+    try {
+      final queue = persistence.loadPendingRevisitSync();
+      for (final id in queue.keys.toList()) {
+        final pending = [...queue[id]!]..sort();
+        while (pending.isNotEmpty) {
+          final response = await client.rpc('register_revisit',
+              params: {'ach_id': id, 'visited_at': pending.first});
+          pending.removeAt(0);
+          if (pending.isEmpty) {
+            queue.remove(id);
+          } else {
+            queue[id] = [...pending];
+          }
+          await persistence.savePendingRevisitSync(queue);
+          await _reconcileRevisit(id, response);
+        }
+      }
+    } catch (e, st) {
+      // Network error — remaining entries retry on next sync/resume.
+      logError(e, st, context: 'achievements.flushRevisitQueue', report: true);
+    } finally {
+      _flushingRevisits = false;
     }
   }
 
-  /// Ask the server whether a background-recorded revisit was legitimate.
-  /// If rejected, reconcile local values to match server authority.
-  Future<void> _validateBackgroundRevisit(String achievementId) async {
-    if (!SupabaseConfig.isConfigured) return;
-    try {
-      final client = ref.read(supabaseClientProvider);
-      if (client.auth.currentUser?.id == null) return;
+  /// Overwrite the local revisit fields with the server's values from a
+  /// revisit RPC response (for both accept and reject — the server is the
+  /// source of truth). Returns whether the server accepted the change.
+  Future<bool> _reconcileRevisit(String achievementId, Object? response,
+      {bool markPendingRevisit = false}) async {
+    if (response is! Map) return false;
+    final accepted = response['accepted'] as bool? ?? false;
+    final serverCount = (response['visit_count'] as num?)?.toInt();
+    if (serverCount == null) return accepted;
 
-      final response = await client.rpc(
-        'register_revisit',
-        params: {'ach_id': achievementId},
-      );
-      if (response is! Map) return;
+    final idx = state.allAchievements.indexWhere((x) => x.id == achievementId);
+    if (idx == -1) return accepted;
 
-      final serverCount = (response['visit_count'] as num?)?.toInt();
-      final serverLastVisited = response['last_visited_at'] != null
+    final reconciled = state.allAchievements[idx].copyWith(
+      visitCount: serverCount,
+      lastVisitedAt: response['last_visited_at'] is String
           ? DateTime.tryParse(response['last_visited_at'] as String)
-          : null;
-      final serverHistory = (response['revisit_history'] as List<dynamic>?)
-          ?.map((d) => DateTime.parse(d as String))
-          .toList();
-
-      // Reconcile local state to match server values (works for both accept
-      // and reject cases — server is the source of truth).
-      final idx =
-          state.allAchievements.indexWhere((x) => x.id == achievementId);
-      if (idx == -1) return;
-      final current = state.allAchievements[idx];
-      if (serverCount == null) return;
-
-      final reconciled = current.copyWith(
-        visitCount: serverCount,
-        lastVisitedAt: serverLastVisited,
-        revisitHistory: serverHistory ?? current.revisitHistory,
-      );
-      _commitAchievement(idx, reconciled);
-      await _persistLocally();
-    } catch (e, st) {
-      // Network error — local stays as optimistic. Retries on next resume.
-      logError(e, st, context: 'achievements.reconcileRevisit', report: true);
-    }
+          : null,
+      revisitHistory: response.containsKey('revisit_history')
+          ? parseRevisitHistory(response['revisit_history'])
+          : null,
+      isPendingRevisit: accepted && markPendingRevisit ? true : null,
+    );
+    _commitAchievement(idx, reconciled);
+    await _persistLocally();
+    return accepted;
   }
 
   /// Get all achievements with pending claims.
@@ -829,48 +879,18 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
         final client = ref.read(supabaseClientProvider);
         final userId = client.auth.currentUser?.id;
         if (userId != null) {
+          // Older queued revisits go first so the server sees them in order.
+          await _flushRevisitQueue();
           final response = await client.rpc(
             'register_revisit',
             params: {'ach_id': achievementId},
           );
 
           if (response is Map) {
-            final accepted = response['accepted'] as bool? ?? false;
-            final serverCount = (response['visit_count'] as num?)?.toInt();
-            final serverLastVisited = response['last_visited_at'] != null
-                ? DateTime.tryParse(response['last_visited_at'] as String)
-                : null;
-            final serverHistory =
-                (response['revisit_history'] as List<dynamic>?)
-                        ?.map((d) => DateTime.parse(d as String))
-                        .toList() ??
-                    achievement.revisitHistory;
-
-            if (accepted) {
-              final updated = achievement.copyWith(
-                visitCount: serverCount ?? achievement.visitCount + 1,
-                lastVisitedAt: serverLastVisited ?? now,
-                revisitHistory: serverHistory,
-                isPendingRevisit: true,
-              );
-              _commitAchievement(index, updated);
-              await _persistLocally();
-              return true;
-            } else {
-              // Server rejected — reconcile local with server values but
-              // don't mark as pending revisit. This also corrects any drift
-              // if the client had stale local counts.
-              if (serverCount != null || serverLastVisited != null) {
-                final reconciled = achievement.copyWith(
-                  visitCount: serverCount ?? achievement.visitCount,
-                  lastVisitedAt: serverLastVisited ?? achievement.lastVisitedAt,
-                  revisitHistory: serverHistory,
-                );
-                _commitAchievement(index, reconciled);
-                await _persistLocally();
-              }
-              return false;
-            }
+            // Rejected → reconciled with server values but not marked as a
+            // pending revisit. This also corrects any stale local counts.
+            return _reconcileRevisit(achievementId, response,
+                markPendingRevisit: true);
           }
         }
       } catch (e, st) {
@@ -880,10 +900,8 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
       }
     }
 
-    // Offline / RPC unavailable — optimistic local update. The next time the
-    // app is online, _syncFromRemote will re-pull authoritative values and
-    // correct any drift. recordRevisit will also be re-attempted via
-    // nearby_achievements_provider on the next GPS update.
+    // Offline / RPC unavailable — optimistic local update, queued so the
+    // server validates it (with this timestamp) on the next sync.
     final optimistic = achievement.copyWith(
       visitCount: achievement.visitCount + 1,
       lastVisitedAt: now,
@@ -892,6 +910,7 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     );
     _commitAchievement(index, optimistic);
     await _persistLocally();
+    await _queueRevisitSync(achievementId, [now]);
     return true;
   }
 
@@ -915,7 +934,8 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
   /// Add a retroactive revisit — appends [visitedAt] to the history and
   /// increments the visit count. Unlike `recordRevisit`, this skips the RPC
   /// cooldown (user is admitting a past visit, not claiming a current one).
-  /// Local-only for now; server sync for retroactive history is not yet wired.
+  /// Synced through the `add_retroactive_revisit` RPC; offline it stays
+  /// local-only.
   Future<bool> addRetroactiveRevisit(String achievementId, DateTime visitedAt) async {
     final index =
         state.allAchievements.indexWhere((a) => a.id == achievementId);
@@ -930,11 +950,34 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     );
     _commitAchievement(index, updated);
     await _persistLocally();
+
+    await _callRevisitRpc(achievementId, 'add_retroactive_revisit', {
+      'visited_at': visitedAt.toUtc().toIso8601String(),
+    });
     return true;
   }
 
+  /// Run a diary-edit revisit RPC and adopt the server's state when it
+  /// accepts. A rejection or network error keeps the local edit.
+  Future<void> _callRevisitRpc(
+      String achievementId, String fn, Map<String, dynamic> params) async {
+    if (!SupabaseConfig.isConfigured) return;
+    try {
+      final client = ref.read(supabaseClientProvider);
+      if (client.auth.currentUser?.id == null) return;
+
+      final response = await client
+          .rpc(fn, params: {'ach_id': achievementId, ...params});
+      if (response is Map && (response['accepted'] as bool? ?? false)) {
+        await _reconcileRevisit(achievementId, response);
+      }
+    } catch (e, st) {
+      logError(e, st, context: 'achievements.$fn', report: true);
+    }
+  }
+
   /// Update a specific entry in the revisit history — used by the edit
-  /// icon on each visit row in the UI. Local-only like addRetroactiveRevisit.
+  /// icon on each visit row in the UI. Synced through `edit_revisit_entry`.
   Future<void> updateRevisitEntry(
       String achievementId, int index, DateTime newDate) async {
     final ai =
@@ -944,6 +987,7 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     if (!a.isUnlocked) return;
     if (index < 0 || index >= a.revisitHistory.length) return;
 
+    final oldDate = a.revisitHistory[index];
     final newHistory = [...a.revisitHistory];
     newHistory[index] = newDate;
     newHistory.sort();
@@ -951,6 +995,11 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     final updated = a.copyWith(revisitHistory: newHistory);
     _commitAchievement(ai, updated);
     await _persistLocally();
+
+    await _callRevisitRpc(achievementId, 'edit_revisit_entry', {
+      'old_at': oldDate.toUtc().toIso8601String(),
+      'new_at': newDate.toUtc().toIso8601String(),
+    });
   }
 
   /// Append a photo URL to an already-unlocked achievement.

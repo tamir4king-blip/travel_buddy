@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_buddy_mobile/shared/models/user_profile.dart';
+import 'package:travel_buddy_mobile/shared/utils/achievement_definitions_codec.dart';
 
 class PersistenceService {
   final SharedPreferences _prefs;
@@ -20,7 +21,7 @@ class PersistenceService {
   static const _keyLiveTracking = 'live_tracking';
   static const _keyNotifications = 'notifications_enabled';
   static const _keyPendingClaims = 'pending_claims';
-  static const _keyAchievementDefinitions = 'achievement_definitions';
+  static const _keyAchievementDefinitions = achievementDefinitionsCacheKey;
 
   // --- User Profile ---
 
@@ -173,6 +174,23 @@ class PersistenceService {
     return map.map((k, v) => MapEntry(k, v as String));
   }
 
+  // --- Revisits awaiting server validation ---
+
+  static const _keyPendingRevisitSync = 'pending_revisit_sync';
+
+  /// Achievement id → UTC ISO timestamps not yet sent to `register_revisit`.
+  Future<void> savePendingRevisitSync(Map<String, List<String>> queue) async {
+    await _prefs.setString(_keyPendingRevisitSync, jsonEncode(queue));
+  }
+
+  Map<String, List<String>> loadPendingRevisitSync() {
+    final raw = _prefs.getString(_keyPendingRevisitSync);
+    if (raw == null) return {};
+    final map = jsonDecode(raw) as Map<String, dynamic>;
+    return map.map((k, v) =>
+        MapEntry(k, (v as List<dynamic>).cast<String>()));
+  }
+
   // --- Achievement Definitions (Supabase cache) ---
 
   Future<void> saveAchievementDefinitions(String json) async {
@@ -218,6 +236,7 @@ class PersistenceService {
     await _prefs.remove(_keyLiveTracking);
     await _prefs.remove(_keyNotifications);
     await _prefs.remove(_keyPendingClaims);
+    await _prefs.remove(_keyPendingRevisitSync);
     await _prefs.remove(_keyQuestChains);
   }
 }
