@@ -132,6 +132,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get totalXp => 'Total XP';
 
   @override
+  String get totalSkillLevel => 'Skill Level';
+
+  @override
   String get level => 'Level';
 
   @override
@@ -810,6 +813,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get heatmapOther => 'Other';
 
   @override
+  String get achievementUnlocked => 'ACHIEVEMENT UNLOCKED!';
+
+  @override
   String get unlockTimeline => 'Unlock Timeline';
 
   @override
@@ -823,4 +829,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapFilterSkills => 'Skills';
+
+  @override
+  String get mapCloseMap => 'Close map';
+
+  @override
+  String get mapZoomIn => 'Zoom in';
+
+  @override
+  String get mapZoomOut => 'Zoom out';
+
+  @override
+  String get mapResetCompass => 'Reset compass';
+
+  @override
+  String get mapMyLocation => 'My location';
+
+  @override
+  String get mapFilters => 'Filters';
+
+  @override
+  String get mapNearby => 'Nearby';
+
+  @override
+  String get mapActiveQuests => 'Active Quests';
+
+  @override
+  String get mapCompletedFilter => 'Completed';
+
+  @override
+  String get mapStartQuestHere => 'Start quest here?';
+
+  @override
+  String get mapLogVisit => 'Log visit';
+
+  @override
+  String get mapViewDetails => 'View Details';
+
+  @override
+  String get mapFilterByType => 'Filter by type';
+
+  @override
+  String get mapFilterByStatus => 'Filter by status';
 }

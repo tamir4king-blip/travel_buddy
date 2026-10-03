@@ -15,6 +15,7 @@ const fishingQuests = <SideQuest>[
     category: 'fishing', skillType: 'angler',
     difficulty: QuestDifficulty.easy, xpReward: 25,
     verification: VerificationMethod.photo,
+    latitude: 60.391, longitude: 5.322,
   ),
   SideQuest(
     id: 'sea-fishing', title: 'Sea Fishing',
@@ -106,6 +107,7 @@ const cookingQuests = <SideQuest>[
     isRepeatable: true, maxCompletions: 5,
     verification: VerificationMethod.photo,
     latitude: 41.903, longitude: 12.496,
+    locations: [ActivityLocation(latitude: 32.3305, longitude: 34.8560)],
   ),
   SideQuest(
     id: 'campfire-cooking', title: 'Campfire Cooking',
@@ -248,6 +250,7 @@ const skiingQuests = <SideQuest>[
     category: 'skiing', skillType: 'skier',
     difficulty: QuestDifficulty.easy, xpReward: 30,
     verification: VerificationMethod.photo,
+    latitude: 46.020, longitude: 7.749,
   ),
   SideQuest(
     id: 'black-diamond', title: 'Black Diamond',
@@ -320,6 +323,7 @@ const campingQuests = <SideQuest>[
     category: 'camping', skillType: 'camper',
     difficulty: QuestDifficulty.easy, xpReward: 35,
     verification: VerificationMethod.photo,
+    latitude: 37.748, longitude: -119.588,
   ),
   SideQuest(
     id: 'wild-camping', title: 'Wild Camping',
@@ -345,6 +349,7 @@ const campingQuests = <SideQuest>[
     difficulty: QuestDifficulty.medium, xpReward: 55,
     isRepeatable: true, maxCompletions: 5,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3200, longitude: 34.8450)],
   ),
   SideQuest(
     id: 'hammock-night', title: 'Hammock Night',
@@ -484,6 +489,7 @@ const waterSportsQuests = <SideQuest>[
     difficulty: QuestDifficulty.easy, xpReward: 35,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3180, longitude: 34.8440)],
   ),
   SideQuest(
     id: 'kayaking', title: 'Kayak Trip',
@@ -557,6 +563,7 @@ const wildlifeQuests = <SideQuest>[
     difficulty: QuestDifficulty.medium, xpReward: 50,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.photo,
+    latitude: 10.280, longitude: -83.850,
   ),
   SideQuest(
     id: 'safari', title: 'Safari',
@@ -654,6 +661,7 @@ const culturalQuests = <SideQuest>[
     difficulty: QuestDifficulty.easy, xpReward: 25,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3290, longitude: 34.8555)],
   ),
   SideQuest(
     id: 'religious-site', title: 'Religious Site',
@@ -670,6 +678,16 @@ const culturalQuests = <SideQuest>[
     difficulty: QuestDifficulty.medium, xpReward: 50,
     isRepeatable: true, maxCompletions: 5,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3340, longitude: 34.8462)],
+  ),
+  SideQuest(
+    id: 'art-workshop', title: 'Art Workshop',
+    description: 'Join a local art or painting workshop',
+    category: 'cultural', skillType: 'artist',
+    difficulty: QuestDifficulty.medium, xpReward: 55,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3300, longitude: 34.8558)],
   ),
   SideQuest(
     id: 'language-lesson', title: 'Language Lesson',
@@ -710,6 +728,7 @@ const adventureQuests = <SideQuest>[
     isRepeatable: true, maxCompletions: 3,
     verification: VerificationMethod.photo,
     requiredSkillType: 'skydiver', requiredSkillLevel: 3,
+    latitude: 46.686, longitude: 7.863,
   ),
   SideQuest(
     id: 'paragliding', title: 'Paragliding',
@@ -726,6 +745,7 @@ const adventureQuests = <SideQuest>[
     difficulty: QuestDifficulty.hard, xpReward: 90,
     isRepeatable: true, maxCompletions: 5,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3350, longitude: 34.8600)],
   ),
   SideQuest(
     id: 'zip-line', title: 'Zip Line',
@@ -759,6 +779,7 @@ const adventureQuests = <SideQuest>[
     difficulty: QuestDifficulty.hard, xpReward: 85,
     isRepeatable: true, maxCompletions: 5,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3315, longitude: 34.8545)],
   ),
   SideQuest(
     id: 'helicopter-ride', title: 'Helicopter Ride',
@@ -989,6 +1010,7 @@ const socialQuests = <SideQuest>[
     difficulty: QuestDifficulty.medium, xpReward: 50,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.manual,
+    latitude: 40.758, longitude: -73.986,
   ),
   SideQuest(
     id: 'travel-buddy', title: 'Travel Buddy',
@@ -1053,6 +1075,7 @@ const extremeQuests = <SideQuest>[
     isRepeatable: true, maxCompletions: 3,
     verification: VerificationMethod.photo,
     requiredSkillType: 'skydiver', requiredSkillLevel: 5,
+    latitude: 25.197, longitude: 55.274,
   ),
   SideQuest(
     id: 'shark-diving', title: 'Shark Cage Diving',
@@ -1120,6 +1143,7 @@ const foodDrinkQuests = <SideQuest>[
     difficulty: QuestDifficulty.easy, xpReward: 20,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.photo,
+    latitude: 13.756, longitude: 100.502,
   ),
   SideQuest(
     id: 'wine-tasting', title: 'Wine Tasting',
@@ -1128,6 +1152,7 @@ const foodDrinkQuests = <SideQuest>[
     difficulty: QuestDifficulty.medium, xpReward: 50,
     isRepeatable: true, maxCompletions: 5,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.3295, longitude: 34.8550)],
   ),
   SideQuest(
     id: 'beer-brewery', title: 'Brewery Tour',
@@ -1190,6 +1215,7 @@ const transportationQuests = <SideQuest>[
     difficulty: QuestDifficulty.easy, xpReward: 30,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.photo,
+    latitude: 46.950, longitude: 7.439,
   ),
   SideQuest(
     id: 'overnight-train', title: 'Overnight Train',
@@ -1231,6 +1257,7 @@ const transportationQuests = <SideQuest>[
     difficulty: QuestDifficulty.easy, xpReward: 30,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.photo,
+    locations: [ActivityLocation(latitude: 32.2950, longitude: 34.8460)],
   ),
   SideQuest(
     id: 'scooter-ride', title: 'Scooter Ride',
@@ -1261,6 +1288,7 @@ const shoppingQuests = <SideQuest>[
     difficulty: QuestDifficulty.easy, xpReward: 20,
     isRepeatable: true, maxCompletions: 10,
     verification: VerificationMethod.photo,
+    latitude: 45.464, longitude: 9.190,
   ),
   SideQuest(
     id: 'bargain-master', title: 'Bargain Master',
@@ -1313,6 +1341,277 @@ const shoppingQuests = <SideQuest>[
 ];
 
 // ============================================
+// NETANYA LOCAL QUESTS
+// ============================================
+const netanyaQuests = <SideQuest>[
+  // ── Fishing ──
+  SideQuest(
+    id: 'netanya-shore-fishing', title: 'Shore Fishing Netanya',
+    description: 'Fish from the Netanya shoreline at sunrise or sunset',
+    category: 'fishing', skillType: 'angler',
+    difficulty: QuestDifficulty.easy, xpReward: 30,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3280, longitude: 34.8470,
+  ),
+  // ── Water Sports ──
+  SideQuest(
+    id: 'netanya-surf', title: 'Surf Netanya Waves',
+    description: 'Catch waves at one of Netanya\'s popular surf spots',
+    category: 'water-sports', skillType: 'surfer',
+    difficulty: QuestDifficulty.medium, xpReward: 60,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3340, longitude: 34.8460,
+  ),
+  SideQuest(
+    id: 'cliff-kayak', title: 'Coastline Kayak',
+    description: 'Kayak along the Netanya coastline beneath the cliffs',
+    category: 'water-sports', skillType: 'kayaker',
+    difficulty: QuestDifficulty.hard, xpReward: 90,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3200, longitude: 34.8440,
+  ),
+  SideQuest(
+    id: 'mediterranean-swim', title: 'Mediterranean Swim',
+    description: 'Swim in the Mediterranean Sea at a Netanya beach',
+    category: 'water-sports', skillType: 'swimmer',
+    difficulty: QuestDifficulty.easy, xpReward: 25,
+    isRepeatable: true, maxCompletions: 20,
+    verification: VerificationMethod.photo,
+    latitude: 32.3245, longitude: 34.8475,
+  ),
+  // ── Photography ──
+  SideQuest(
+    id: 'netanya-sunset-photo', title: 'Promenade Sunset',
+    description: 'Photograph a sunset from the Netanya promenade',
+    category: 'photography', skillType: 'sunset',
+    difficulty: QuestDifficulty.easy, xpReward: 30,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3282, longitude: 34.8485,
+  ),
+  SideQuest(
+    id: 'cliff-panorama', title: 'Cliff Panorama Shot',
+    description: 'Take a panoramic photo from the cliff edge overlooking the sea',
+    category: 'photography', skillType: 'photographer',
+    difficulty: QuestDifficulty.medium, xpReward: 50,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3275, longitude: 34.8487,
+  ),
+  SideQuest(
+    id: 'elevator-shot', title: 'Glass Elevator View',
+    description: 'Capture the view from inside the Glass Elevator',
+    category: 'photography', skillType: 'photographer',
+    difficulty: QuestDifficulty.medium, xpReward: 45,
+    verification: VerificationMethod.photo,
+    latitude: 32.3275, longitude: 34.8487,
+  ),
+  // ── Hiking ──
+  SideQuest(
+    id: 'full-tayelet-walk', title: 'Full Promenade Walk',
+    description: 'Walk the entire Netanya cliff-top promenade from end to end',
+    category: 'hiking', skillType: 'hiker',
+    difficulty: QuestDifficulty.medium, xpReward: 55,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.location,
+    latitude: 32.3282, longitude: 34.8485,
+  ),
+  SideQuest(
+    id: 'alexander-trail', title: 'Alexander Stream Trail',
+    description: 'Hike the Alexander Stream nature trail and spot wildlife',
+    category: 'hiking', skillType: 'hiker',
+    difficulty: QuestDifficulty.hard, xpReward: 85,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3740, longitude: 34.8640,
+  ),
+  SideQuest(
+    id: 'poleg-stream-hike', title: 'Poleg Stream Hike',
+    description: 'Follow the Poleg Stream trail through the nature reserve',
+    category: 'hiking', skillType: 'hiker',
+    difficulty: QuestDifficulty.medium, xpReward: 60,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.2900, longitude: 34.8450,
+  ),
+  // ── Cultural ──
+  SideQuest(
+    id: 'market-tasting', title: 'Market Taste Tour',
+    description: 'Try at least 3 different foods at the Netanya Market',
+    category: 'cultural', skillType: 'historian',
+    difficulty: QuestDifficulty.easy, xpReward: 35,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3310, longitude: 34.8570,
+  ),
+  SideQuest(
+    id: 'netanya-museum-visit', title: 'Museum Visit',
+    description: 'Visit a museum or gallery in Netanya',
+    category: 'cultural', skillType: 'historian',
+    difficulty: QuestDifficulty.easy, xpReward: 30,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3380, longitude: 34.8560,
+  ),
+  SideQuest(
+    id: 'fortress-explore', title: 'Crusader Ruins',
+    description: 'Explore and photograph the Umm Khalid Crusader fortress ruins',
+    category: 'cultural', skillType: 'historian',
+    difficulty: QuestDifficulty.medium, xpReward: 55,
+    verification: VerificationMethod.photo,
+    latitude: 32.3520, longitude: 34.8490,
+  ),
+  // ── Food & Drink ──
+  SideQuest(
+    id: 'netanya-hummus', title: 'Netanya Hummus',
+    description: 'Try hummus at a local Netanya restaurant',
+    category: 'food-drink', skillType: 'foodie',
+    difficulty: QuestDifficulty.easy, xpReward: 20,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3290, longitude: 34.8555,
+  ),
+  SideQuest(
+    id: 'beach-cafe', title: 'Beach Cafe',
+    description: 'Have coffee or a meal at a beach-side cafe',
+    category: 'food-drink', skillType: 'barista',
+    difficulty: QuestDifficulty.easy, xpReward: 20,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3340, longitude: 34.8470,
+  ),
+  SideQuest(
+    id: 'shakshuka-breakfast', title: 'Shakshuka Morning',
+    description: 'Eat shakshuka for breakfast at a Netanya cafe',
+    category: 'food-drink', skillType: 'foodie',
+    difficulty: QuestDifficulty.easy, xpReward: 25,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3290, longitude: 34.8550,
+  ),
+  // ── Wellness ──
+  SideQuest(
+    // Renamed from 'beach-yoga': that id already belongs to the global
+    // wellness quest, and duplicate ids break id-keyed lookups (the first
+    // entry shadows this one) and the XP definition seeds.
+    id: 'netanya-beach-yoga', title: 'Beach Yoga',
+    description: 'Do a yoga session on a Netanya beach',
+    category: 'wellness', skillType: 'yogi',
+    difficulty: QuestDifficulty.easy, xpReward: 30,
+    isRepeatable: true, maxCompletions: 20,
+    verification: VerificationMethod.photo,
+    latitude: 32.3245, longitude: 34.8475,
+  ),
+  SideQuest(
+    id: 'cliff-run', title: 'Cliff Promenade Run',
+    description: 'Run along the cliff-top promenade with sea views',
+    category: 'wellness', skillType: 'runner',
+    difficulty: QuestDifficulty.medium, xpReward: 45,
+    isRepeatable: true, maxCompletions: 20,
+    verification: VerificationMethod.location,
+    latitude: 32.3282, longitude: 34.8485,
+  ),
+  SideQuest(
+    id: 'sunrise-swim', title: 'Sunrise Swim',
+    description: 'Swim in the sea at sunrise',
+    category: 'wellness', skillType: 'swimmer',
+    difficulty: QuestDifficulty.medium, xpReward: 50,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.timeBased,
+    latitude: 32.3340, longitude: 34.8465,
+  ),
+  // ── Wildlife ──
+  SideQuest(
+    id: 'turtle-watch', title: 'Turtle Watch',
+    description: 'Spot softshell turtles at the Alexander Stream nature reserve',
+    category: 'wildlife', skillType: 'naturalist',
+    difficulty: QuestDifficulty.hard, xpReward: 85,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3740, longitude: 34.8640,
+  ),
+  SideQuest(
+    id: 'coastal-birds', title: 'Coastal Birding',
+    description: 'Identify 3 bird species along the Netanya coastline',
+    category: 'wildlife', skillType: 'naturalist',
+    difficulty: QuestDifficulty.medium, xpReward: 50,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3460, longitude: 34.8460,
+  ),
+  // ── Urban ──
+  SideQuest(
+    id: 'netanya-street-art', title: 'Netanya Street Art',
+    description: 'Find and photograph 3 pieces of street art in Netanya',
+    category: 'urban', skillType: 'explorer',
+    difficulty: QuestDifficulty.medium, xpReward: 50,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3290, longitude: 34.8550,
+  ),
+  SideQuest(
+    id: 'kikar-explore', title: 'Independence Square Night',
+    description: 'Explore Independence Square after dark and enjoy the atmosphere',
+    category: 'urban', skillType: 'explorer',
+    difficulty: QuestDifficulty.easy, xpReward: 25,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3290, longitude: 34.8555,
+  ),
+  // ── Social ──
+  SideQuest(
+    id: 'beach-volleyball', title: 'Beach Volleyball',
+    description: 'Play a game of beach volleyball with locals or travelers',
+    category: 'social', skillType: 'socialite',
+    difficulty: QuestDifficulty.medium, xpReward: 45,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3340, longitude: 34.8465,
+  ),
+  SideQuest(
+    id: 'local-chat', title: 'Local Story',
+    description: 'Have a conversation with a local Netanya resident about the city',
+    category: 'social', skillType: 'socialite',
+    difficulty: QuestDifficulty.easy, xpReward: 30,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.manual,
+    latitude: 32.3290, longitude: 34.8555,
+  ),
+  // ── Shopping ──
+  SideQuest(
+    id: 'market-shopping', title: 'Market Haul',
+    description: 'Buy fresh produce or local goods at the Netanya Market',
+    category: 'shopping', skillType: 'shopper',
+    difficulty: QuestDifficulty.easy, xpReward: 20,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3310, longitude: 34.8570,
+  ),
+  // ── Nightlife ──
+  SideQuest(
+    id: 'netanya-bar-hop', title: 'Netanya Bar Hop',
+    description: 'Visit 2 bars or pubs in Netanya in one evening',
+    category: 'nightlife', skillType: 'partygoer',
+    difficulty: QuestDifficulty.medium, xpReward: 50,
+    isRepeatable: true, maxCompletions: 5,
+    verification: VerificationMethod.photo,
+    latitude: 32.3290, longitude: 34.8555,
+  ),
+  SideQuest(
+    id: 'sunset-cocktail', title: 'Sunset Cocktail',
+    description: 'Enjoy a cocktail while watching the sunset over the Mediterranean',
+    category: 'nightlife', skillType: 'mixologist',
+    difficulty: QuestDifficulty.easy, xpReward: 30,
+    isRepeatable: true, maxCompletions: 10,
+    verification: VerificationMethod.photo,
+    latitude: 32.3282, longitude: 34.8485,
+  ),
+];
+
+// ============================================
 // ALL QUESTS COMBINED
 // ============================================
 const questRegistry = <SideQuest>[
@@ -1334,6 +1633,7 @@ const questRegistry = <SideQuest>[
   ...foodDrinkQuests,
   ...transportationQuests,
   ...shoppingQuests,
+  ...netanyaQuests,
 ];
 
 /// Get quests by category

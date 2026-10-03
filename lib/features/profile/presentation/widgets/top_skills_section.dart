@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:travel_buddy_mobile/l10n/app_localizations.dart';
 import 'package:travel_buddy_mobile/core/theme/app_theme.dart';
 import 'package:travel_buddy_mobile/shared/models/skill_group.dart';
+import 'package:travel_buddy_mobile/l10n/registry_l10n.dart';
 
 class TopSkillsSection extends StatelessWidget {
   final Map<String, int> skillXp;
@@ -77,6 +78,7 @@ class _SkillRow extends StatelessWidget {
     final skill = _skill;
     if (skill == null) return const SizedBox.shrink();
 
+    final locale = Localizations.localeOf(context);
     final level = (xp / skill.xpPerLevel).floor() + 1;
     final clampedLevel = level.clamp(1, skill.maxLevel);
     final progressInLevel = (xp % skill.xpPerLevel) / skill.xpPerLevel;
@@ -97,7 +99,7 @@ class _SkillRow extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      skill.name,
+                      RegistryL10n.skillName(locale, skill.id, skill.name),
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,

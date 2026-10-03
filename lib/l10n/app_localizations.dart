@@ -320,6 +320,12 @@ abstract class AppLocalizations {
   /// **'Total XP'**
   String get totalXp;
 
+  /// No description provided for @totalSkillLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill Level'**
+  String get totalSkillLevel;
+
   /// No description provided for @level.
   ///
   /// In en, this message translates to:
@@ -1532,6 +1538,12 @@ abstract class AppLocalizations {
   /// **'Other'**
   String get heatmapOther;
 
+  /// No description provided for @achievementUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'ACHIEVEMENT UNLOCKED!'**
+  String get achievementUnlocked;
+
   /// No description provided for @unlockTimeline.
   ///
   /// In en, this message translates to:
@@ -1561,6 +1573,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Skills'**
   String get mapFilterSkills;
+
+  /// No description provided for @mapCloseMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Close map'**
+  String get mapCloseMap;
+
+  /// No description provided for @mapZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get mapZoomIn;
+
+  /// No description provided for @mapZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get mapZoomOut;
+
+  /// No description provided for @mapResetCompass.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset compass'**
+  String get mapResetCompass;
+
+  /// No description provided for @mapMyLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'My location'**
+  String get mapMyLocation;
+
+  /// No description provided for @mapFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get mapFilters;
+
+  /// No description provided for @mapNearby.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby'**
+  String get mapNearby;
+
+  /// No description provided for @mapActiveQuests.
+  ///
+  /// In en, this message translates to:
+  /// **'Active Quests'**
+  String get mapActiveQuests;
+
+  /// No description provided for @mapCompletedFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get mapCompletedFilter;
+
+  /// No description provided for @mapStartQuestHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Start quest here?'**
+  String get mapStartQuestHere;
+
+  /// No description provided for @mapLogVisit.
+  ///
+  /// In en, this message translates to:
+  /// **'Log visit'**
+  String get mapLogVisit;
+
+  /// No description provided for @mapViewDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get mapViewDetails;
+
+  /// No description provided for @mapFilterByType.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by type'**
+  String get mapFilterByType;
+
+  /// No description provided for @mapFilterByStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by status'**
+  String get mapFilterByStatus;
 }
 
 class _AppLocalizationsDelegate

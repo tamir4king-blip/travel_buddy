@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:travel_buddy_mobile/core/utils/error_logger.dart';
 
 class LeaderboardResult {
   final List<LeaderboardEntryData> entries;
@@ -112,7 +113,8 @@ class LeaderboardService {
           .count(CountOption.exact);
 
       return higherCount.count + 1;
-    } catch (_) {
+    } catch (e, st) {
+      logError(e, st, context: 'leaderboard.userRank', report: true);
       return null;
     }
   }

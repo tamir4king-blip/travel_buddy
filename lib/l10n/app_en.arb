@@ -48,6 +48,7 @@
   "@exploreCity": { "placeholders": { "city": { "type": "String" } } },
 
   "totalXp": "Total XP",
+  "totalSkillLevel": "Skill Level",
   "level": "Level",
   "trophies": "Trophies",
   "account": "Account",
@@ -313,10 +314,27 @@
   "@heatmapUnlockedOfTotal": { "placeholders": { "unlocked": { "type": "int" }, "total": { "type": "int" } } },
   "heatmapOther": "Other",
 
+  "achievementUnlocked": "ACHIEVEMENT UNLOCKED!",
+
   "unlockTimeline": "Unlock Timeline",
   "noUnlockedTrophiesYet": "No unlocked trophies yet.",
 
   "mapFilterAchievements": "Achievements",
   "mapFilterQuests": "Quests",
-  "mapFilterSkills": "Skills"
+  "mapFilterSkills": "Skills",
+
+  "mapCloseMap": "Close map",
+  "mapZoomIn": "Zoom in",
+  "mapZoomOut": "Zoom out",
+  "mapResetCompass": "Reset compass",
+  "mapMyLocation": "My location",
+  "mapFilters": "Filters",
+  "mapNearby": "Nearby",
+  "mapActiveQuests": "Active Quests",
+  "mapCompletedFilter": "Completed",
+  "mapStartQuestHere": "Start quest here?",
+  "mapLogVisit": "Log visit",
+  "mapViewDetails": "View Details",
+  "mapFilterByType": "Filter by type",
+  "mapFilterByStatus": "Filter by status"
 }

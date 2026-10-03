@@ -24,6 +24,11 @@ class SupabaseConfig {
     defaultValue: '',
   );
 
+  static const sentryDsn = String.fromEnvironment(
+    'SENTRY_DSN',
+    defaultValue: '',
+  );
+
   /// Whether Supabase was successfully initialized at startup.
   /// Set by main.dart after Supabase.initialize() completes.
   static bool initialized = false;

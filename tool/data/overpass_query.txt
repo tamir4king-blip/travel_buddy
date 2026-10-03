@@ -1,0 +1,1 @@
+[out:json][timeout:30];node["place"~"suburb|neighbourhood|quarter"](32.25,34.82,32.37,34.92);out body;

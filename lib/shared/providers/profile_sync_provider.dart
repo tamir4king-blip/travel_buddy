@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_buddy_mobile/core/config/supabase_config.dart';
 import 'package:travel_buddy_mobile/shared/providers/supabase_provider.dart';
-import 'package:travel_buddy_mobile/shared/services/profile_sync_service.dart';
+import 'package:travel_buddy_mobile/features/profile/data/profile_repository.dart';
 
-/// Provides a [ProfileSyncService] when Supabase is configured, otherwise null.
-final profileSyncServiceProvider = Provider<ProfileSyncService?>((ref) {
+/// Provides a [ProfileRepository] when Supabase is configured, otherwise null.
+final profileSyncServiceProvider = Provider<ProfileRepository?>((ref) {
   if (!SupabaseConfig.isConfigured) return null;
   final client = ref.watch(supabaseClientProvider);
-  return ProfileSyncService(client);
+  return ProfileRepository(client);
 });

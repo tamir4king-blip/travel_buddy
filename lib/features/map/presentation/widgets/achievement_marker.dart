@@ -38,7 +38,7 @@ class AchievementMarker extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Pulsing ring when in range
+            // Pulsing ring when in range (locked + user nearby)
             if (inRange && !isUnlocked)
               Container(
                 width: 48,
@@ -52,46 +52,67 @@ class AchievementMarker extends StatelessWidget {
                   .scaleXY(begin: 0.8, end: 1.2, duration: 1200.ms)
                   .fadeOut(begin: 0.8, duration: 1200.ms),
 
-            // Pin body
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isUnlocked ? color.withValues(alpha: 0.4) : color,
-                border: Border.all(
-                  color: isUnlocked ? color.withValues(alpha: 0.6) : Colors.white,
-                  width: 2,
-                ),
-                boxShadow: isUnlocked
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
-              ),
-              child: Icon(
-                isUnlocked ? LucideIcons.check : LucideIcons.trophy,
-                size: 18,
-                color: isUnlocked ? Colors.white70 : Colors.white,
-              ),
-            ),
-
-            // Pin tail
-            Positioned(
-              bottom: 0,
-              child: CustomPaint(
-                size: const Size(12, 10),
-                painter: _PinTailPainter(
-                  color: isUnlocked ? color.withValues(alpha: 0.4) : color,
-                ),
-              ),
-            ),
+            if (isUnlocked)
+              _unlockedPin(color)
+            else
+              _lockedLock(color),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Unlocked state — classic pin with checkmark (existing look).
+  Widget _unlockedPin(Color color) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.4),
+            border: Border.all(color: color.withValues(alpha: 0.6), width: 2),
+          ),
+          child: const Icon(
+            LucideIcons.check,
+            size: 18,
+            color: Colors.white70,
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          child: CustomPaint(
+            size: const Size(12, 10),
+            painter: _PinTailPainter(color: color.withValues(alpha: 0.4)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Locked state — big lock icon in tier color, no pin body.
+  Widget _lockedLock(Color color) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: 0.15),
+        border: Border.all(color: color, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.4),
+            blurRadius: 8,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Icon(
+        LucideIcons.lock,
+        size: 22,
+        color: color,
       ),
     );
   }

@@ -101,6 +101,40 @@ class AppShadows {
   }
 }
 
+/// Spacing scale — use these instead of magic numbers so screens line up.
+abstract final class AppSpacing {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 28;
+
+  /// Default horizontal screen padding.
+  static const double page = 20;
+}
+
+/// Corner radius scale.
+abstract final class AppRadius {
+  static const double chip = 12;
+  static const double button = 14;
+  static const double card = 18;
+  static const double sheet = 28;
+}
+
+/// Motion tokens — shared durations and curves so the whole app moves with
+/// one voice. `emphasized` is for large surfaces (sheets, page transitions),
+/// `standard` for in-place state changes, `quick` for taps/toggles.
+abstract final class AppMotion {
+  static const Duration quick = Duration(milliseconds: 160);
+  static const Duration standard = Duration(milliseconds: 260);
+  static const Duration emphasized = Duration(milliseconds: 380);
+
+  static const Curve enter = Curves.easeOutCubic;
+  static const Curve exit = Curves.easeInCubic;
+  static const Curve spring = Curves.easeOutBack;
+}
+
 class AppTheme {
   static ThemeData get darkTheme {
     final displayFont = GoogleFonts.plusJakartaSans();

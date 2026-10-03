@@ -1,12 +1,14 @@
-import 'dart:ui';
-
+import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:travel_buddy_mobile/core/theme/app_theme.dart';
 import 'package:travel_buddy_mobile/features/map/presentation/widgets/achievement_marker.dart';
+import 'package:travel_buddy_mobile/features/map/presentation/widgets/marker_icons.dart';
 import 'package:travel_buddy_mobile/shared/models/achievement.dart';
+import 'package:travel_buddy_mobile/shared/models/quest.dart';
 import 'package:travel_buddy_mobile/shared/models/side_quest.dart';
 import 'package:travel_buddy_mobile/shared/models/skill_group.dart';
 
-enum MapMarkerType { achievement, quest, skill }
+enum MapMarkerType { achievement, quest, skill, questChain }
 
 sealed class MapMarkerItem {
   final String id;
@@ -22,6 +24,29 @@ sealed class MapMarkerItem {
     required this.type,
     required this.pinColor,
   });
+
+  /// Icon glyph rendered inside the pin circle. Subclasses override.
+  IconData get iconData => LucideIcons.mapPin;
+
+  /// Whether the pin should render in its locked visual state (muted fill).
+  bool get isLocked => false;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MapMarkerItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          latitude == other.latitude &&
+          longitude == other.longitude &&
+          type == other.type &&
+          pinColor == other.pinColor &&
+          iconData.codePoint == other.iconData.codePoint &&
+          isLocked == other.isLocked;
+
+  @override
+  int get hashCode => Object.hash(
+      id, latitude, longitude, type, pinColor, iconData.codePoint, isLocked);
 }
 
 class AchievementMarkerItem extends MapMarkerItem {
@@ -35,14 +60,23 @@ class AchievementMarkerItem extends MapMarkerItem {
           type: MapMarkerType.achievement,
           pinColor: AchievementMarker.tierColor(achievement.tier),
         );
+
+  @override
+  IconData get iconData =>
+      achievement.isUnlocked
+          ? iconForCollection(achievement.collectionId)
+          : LucideIcons.lock;
+
+  @override
+  bool get isLocked => !achievement.isUnlocked;
 }
 
 class QuestMarkerItem extends MapMarkerItem {
   final SideQuest quest;
 
-  QuestMarkerItem({required this.quest})
+  QuestMarkerItem({required this.quest, int locationIndex = 0})
       : super(
-          id: quest.id,
+          id: locationIndex == 0 ? quest.id : '${quest.id}@$locationIndex',
           latitude: quest.latitude!,
           longitude: quest.longitude!,
           type: MapMarkerType.quest,
@@ -77,5 +111,30 @@ class SkillMarkerItem extends MapMarkerItem {
     if (hex.length == 6) buffer.write('FF');
     buffer.write(hex);
     return Color(int.parse(buffer.toString(), radix: 16));
+  }
+}
+
+class QuestChainMarkerItem extends MapMarkerItem {
+  final Quest questChain;
+
+  QuestChainMarkerItem({
+    required this.questChain,
+    required double latitude,
+    required double longitude,
+  }) : super(
+          id: 'chain-${questChain.id}',
+          latitude: latitude,
+          longitude: longitude,
+          type: MapMarkerType.questChain,
+          pinColor: rarityColor(questChain.rarity),
+        );
+
+  static Color rarityColor(QuestRarity rarity) {
+    return switch (rarity) {
+      QuestRarity.common => AppColors.success,
+      QuestRarity.rare => AppColors.info,
+      QuestRarity.epic => const Color(0xFF9333EA),
+      QuestRarity.legendary => const Color(0xFFEAB308),
+    };
   }
 }

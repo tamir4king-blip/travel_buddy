@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_buddy_mobile/core/utils/error_logger.dart';
 import 'package:travel_buddy_mobile/shared/models/user_profile.dart';
 import 'package:travel_buddy_mobile/shared/providers/auth_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/persistence_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/profile_sync_provider.dart';
+import 'package:travel_buddy_mobile/shared/utils/xp_rules.dart';
 
 class UserProfileNotifier extends StateNotifier<UserProfile> {
   final Ref ref;
@@ -28,20 +30,25 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       final remote = await syncService.loadProfileFromRemote();
       if (remote == null) return;
 
-      // Merge: remote wins for text fields, higher value wins for XP/level
+      // Server wins for XP/level/premium: total_xp is computed by database
+      // triggers from synced achievement/quest rows, and clients can no
+      // longer write those columns. A temporarily lower remote value just
+      // means local claims haven't synced yet — they'll be re-awarded
+      // server-side once the rows arrive, and the next reload converges.
       state = state.copyWith(
         displayName: remote.displayName,
         username: remote.username,
         bio: remote.bio,
         avatarUrl: remote.avatarUrl,
-        totalXp: remote.totalXp > state.totalXp ? remote.totalXp : null,
-        level: remote.level > state.level ? remote.level : null,
+        totalXp: remote.totalXp,
+        level: remote.level,
         isPublic: remote.isPublic,
         isPremium: remote.isPremium,
       );
       _persistLocally();
-    } catch (_) {
-      // Silently fail — local persistence is primary
+    } catch (e, st) {
+      // Local persistence is primary
+      logError(e, st, context: 'userProfile.syncFromRemote', report: true);
     }
   }
 
@@ -61,17 +68,23 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       if (syncService == null) return;
       // Fire-and-forget
       syncService.syncProfileToRemote(state);
-    } catch (_) {
-      // Silently fail
+    } catch (e, st) {
+      logError(e, st, context: 'userProfile.syncToRemote', report: true);
     }
   }
 
+  /// Optimistic local XP award. The server independently re-derives the
+  /// authoritative total from synced rows; [reloadFromRemote] reconciles.
   void addXp(int amount) {
     final newXp = state.totalXp + amount;
-    final newLevel = _calculateLevel(newXp);
+    final newLevel = XpRules.levelForXp(newXp);
     state = state.copyWith(totalXp: newXp, level: newLevel);
     _persist();
   }
+
+  /// Re-pull the server-authoritative profile (XP/level). Called after
+  /// remote syncs that may have triggered server-side XP awards.
+  Future<void> reloadFromRemote() => _loadFromRemote();
 
   void updateProfile({
     String? displayName,
@@ -90,30 +103,10 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     _persist();
   }
 
-  static int _calculateLevel(int totalXp) {
-    if (totalXp < 100) return 1;
-    if (totalXp < 250) return 2;
-    if (totalXp < 500) return 3;
-    if (totalXp < 850) return 4;
-    if (totalXp < 1300) return 5;
-    if (totalXp < 1850) return 6;
-    if (totalXp < 2500) return 7;
-    if (totalXp < 3300) return 8;
-    if (totalXp < 4250) return 9;
-    if (totalXp < 5400) return 10;
-    return 10 + ((totalXp - 5400) ~/ 1500);
-  }
+  static int xpForLevel(int level) => XpRules.xpForLevel(level);
 
-  static int xpForLevel(int level) {
-    const thresholds = [0, 100, 250, 500, 850, 1300, 1850, 2500, 3300, 4250, 5400];
-    if (level <= 10) return thresholds[level];
-    return 5400 + (level - 10) * 1500;
-  }
-
-  static int xpToNextLevel(int totalXp, int currentLevel) {
-    final nextLevelXp = xpForLevel(currentLevel + 1);
-    return nextLevelXp - totalXp;
-  }
+  static int xpToNextLevel(int totalXp, int currentLevel) =>
+      XpRules.xpToNextLevel(totalXp, currentLevel);
 }
 
 final userProfileProvider =

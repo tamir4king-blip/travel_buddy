@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:travel_buddy_mobile/core/theme/app_theme.dart';
 import 'package:travel_buddy_mobile/shared/models/achievement.dart';
+import 'package:travel_buddy_mobile/shared/providers/achievement_definitions_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/achievements_provider.dart';
 
 class AchievementEditorScreen extends ConsumerStatefulWidget {
@@ -47,6 +49,16 @@ class _AchievementEditorScreenState
             },
             child: const Text('Lock All',
                 style: TextStyle(color: AppColors.error, fontSize: 12)),
+          ),
+          IconButton(
+            onPressed: () {
+              ref.read(achievementDefinitionsProvider.notifier).refresh();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Syncing definitions...')),
+              );
+            },
+            icon: const Icon(LucideIcons.refreshCw, size: 16),
+            tooltip: 'Sync from Supabase',
           ),
         ],
       ),
@@ -185,7 +197,7 @@ class _AchievementTileState extends State<_AchievementTile> {
                             style: const TextStyle(
                                 fontWeight: FontWeight.w600, fontSize: 13)),
                         Text(
-                          '${a.tier.name} • ${a.xpReward} XP • ${a.claimRadius?.toInt() ?? 0}m',
+                          '${a.tier.name} • ${a.xpReward} XP • ${a.hasPolygon ? "polygon (${a.claimPolygon!.length}pts)" : "${a.claimRadius?.toInt() ?? 0}m"}',
                           style: const TextStyle(
                               color: AppColors.textMuted, fontSize: 11),
                         ),
@@ -286,6 +298,26 @@ class _AchievementTileState extends State<_AchievementTile> {
                       ),
                     ],
                   ),
+                  if (a.latitude != null && a.longitude != null) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            context.push('/dev-panel/polygon-editor'),
+                        icon: Icon(LucideIcons.hexagon, size: 14),
+                        label: Text(
+                          a.hasPolygon
+                              ? 'Edit Polygon (${a.claimPolygon!.length} vertices)'
+                              : 'Draw Polygon',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

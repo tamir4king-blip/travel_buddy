@@ -2,6 +2,14 @@ enum QuestDifficulty { easy, medium, hard, legendary }
 
 enum VerificationMethod { photo, manual, location, timeBased }
 
+/// A geographic location where an activity can be performed.
+class ActivityLocation {
+  final double latitude;
+  final double longitude;
+
+  const ActivityLocation({required this.latitude, required this.longitude});
+}
+
 class SideQuest {
   final String id;
   final String title;
@@ -21,6 +29,9 @@ class SideQuest {
   final double? latitude;
   final double? longitude;
 
+  /// Additional locations where this activity can be performed.
+  final List<ActivityLocation> locations;
+
   const SideQuest({
     required this.id,
     required this.title,
@@ -39,7 +50,18 @@ class SideQuest {
     this.requiredQuestIds = const [],
     this.latitude,
     this.longitude,
+    this.locations = const [],
   });
+
+  /// All locations: primary lat/lng (if set) + additional locations.
+  List<ActivityLocation> get allLocations {
+    final result = <ActivityLocation>[];
+    if (latitude != null && longitude != null) {
+      result.add(ActivityLocation(latitude: latitude!, longitude: longitude!));
+    }
+    result.addAll(locations);
+    return result;
+  }
 
   bool isUnlocked({
     required Map<String, int> skillLevels,
@@ -64,6 +86,7 @@ class SideQuest {
     List<String>? requiredQuestIds,
     double? latitude,
     double? longitude,
+    List<ActivityLocation>? locations,
   }) {
     return SideQuest(
       id: id,
@@ -83,6 +106,7 @@ class SideQuest {
       requiredQuestIds: requiredQuestIds ?? this.requiredQuestIds,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      locations: locations ?? this.locations,
     );
   }
 }

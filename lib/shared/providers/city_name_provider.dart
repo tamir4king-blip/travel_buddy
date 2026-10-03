@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:travel_buddy_mobile/core/utils/error_logger.dart';
 import 'package:travel_buddy_mobile/shared/providers/geolocation_provider.dart';
 
 class CityNameNotifier extends StateNotifier<String?> {
@@ -40,8 +41,9 @@ class CityNameNotifier extends StateNotifier<String?> {
           state = city;
         }
       }
-    } catch (_) {
+    } catch (e, st) {
       // Geocoding failed — keep existing city name or null
+      logError(e, st, context: 'cityName.geocode');
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:travel_buddy_mobile/l10n/app_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
+import 'package:travel_buddy_mobile/core/config/supabase_config.dart';
 import 'package:travel_buddy_mobile/core/theme/app_theme.dart';
 import 'package:travel_buddy_mobile/shared/providers/achievements_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/auth_provider.dart';
@@ -20,11 +23,21 @@ import 'package:travel_buddy_mobile/features/profile/presentation/widgets/recent
 import 'package:travel_buddy_mobile/shared/widgets/visual_extras.dart';
 import 'package:travel_buddy_mobile/features/dev_panel/presentation/widgets/dev_entry_gesture.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final l10n = AppLocalizations.of(context)!;
     final user = ref.watch(userProfileProvider);
     final achievements = ref.watch(achievementsProvider);
@@ -100,8 +113,20 @@ class ProfileScreen extends ConsumerWidget {
 
               // 3. Member since (long-press for dev panel)
               const SizedBox(height: 8),
-              DevEntryGesture(
-                child: Text(
+              if (kDebugMode)
+                DevEntryGesture(
+                  child: Text(
+                    l10n.memberSince(
+                      DateFormat.yMMMM(locale).format(user.createdAt),
+                    ),
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ).animate().fadeIn(duration: 400.ms),
+                )
+              else
+                Text(
                   l10n.memberSince(
                     DateFormat.yMMMM(locale).format(user.createdAt),
                   ),
@@ -110,7 +135,6 @@ class ProfileScreen extends ConsumerWidget {
                     fontSize: 12,
                   ),
                 ).animate().fadeIn(duration: 400.ms),
-              ),
 
               const SizedBox(height: 24),
 
@@ -213,6 +237,22 @@ class ProfileScreen extends ConsumerWidget {
                   _SettingsTile(icon: LucideIcons.mapPin, label: l10n.locationSettings, onTap: () => context.push('/profile/settings')),
                 ],
               ),
+              // Dev Panel (admin only — tamir4king@gmail.com)
+              if (SupabaseConfig.isConfigured &&
+                  sb.Supabase.instance.client.auth.currentUser?.email ==
+                      'tamir4king@gmail.com') ...[
+                const SizedBox(height: 20),
+                _SettingsSection(
+                  title: 'Admin',
+                  items: [
+                    _SettingsTile(
+                      icon: LucideIcons.code,
+                      label: 'Dev Panel',
+                      onTap: () => context.push('/dev-panel'),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 20),
               _SettingsSection(
                 title: l10n.support,

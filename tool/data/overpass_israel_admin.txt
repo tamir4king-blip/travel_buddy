@@ -1,0 +1,1 @@
+[out:json][timeout:45];relation["boundary"="administrative"]["admin_level"~"^(4|8)$"](29.4,34.2,33.4,35.95);out ids tags;

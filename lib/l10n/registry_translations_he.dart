@@ -117,6 +117,42 @@ const Map<String, String> heAchievementTitles = {
   'tourist-barcelona': 'ברצלונה',
   'tourist-bali': 'באלי',
   'tourist-machu-picchu': 'מאצ\'ו פיצ\'ו',
+  // ── Volcanoes ──
+  'volcano-vesuvius': 'הר וזוב',
+  'volcano-kilauea': 'קילוואה',
+  'volcano-krakatoa': 'קרקטואה / אנאק קרקטאו',
+  'volcano-stromboli': 'סטרומבולי',
+  'volcano-eyjafjallajokull': 'אייאפיאטלאיוקול',
+  'volcano-mayon': 'הר מאיון',
+  'volcano-pinatubo': 'הר פינטובו',
+  'volcano-erta-ale': 'ארטה אלה',
+  'volcano-villarrica': 'ויאריקה',
+  // ── Waterfalls ──
+  'wf-niagara': 'מפלי הניאגרה',
+  'wf-iguazu': 'מפלי איגואסו',
+  'wf-victoria': 'מפלי ויקטוריה',
+  'wf-angel': 'מפלי אנג\'ל',
+  'wf-plitvice': 'ולקי סלאפ (פליטביצה)',
+  'wf-gullfoss': 'גולפוס',
+  'wf-yosemite': 'מפלי יוסמיטי',
+  'wf-kaieteur': 'מפלי קאיטאור',
+  'wf-sutherland': 'מפלי סאת\'רלנד',
+  'wf-detian': 'מפלי דטיאן',
+  'wf-jog': 'מפלי ג\'וג',
+  'wf-skogafoss': 'סקוגאפוס',
+  'wf-seljalandsfoss': 'סליאלנדספוס',
+  // ── Glaciers & Ice ──
+  'glacier-perito-moreno': 'קרחון פריטו מורנו',
+  'glacier-vatnajokull': 'ואטנאיוקול',
+  'glacier-aletsch': 'קרחון אלץ\'',
+  'glacier-jostedalsbreen': 'יוסטדאלסבריאן',
+  'glacier-athabasca': 'קרחון אתבסקה ושדה הקרח קולומביה',
+  'glacier-mendenhall': 'קרחון מנדנהול',
+  'glacier-franz-josef': 'קרחון פרנץ יוזף',
+  'glacier-fox': 'קרחון פוקס',
+  'glacier-antarctic-shelves': 'מדפי הקרח של אנטארקטיקה',
+  // ── Continents ──
+  'continent-antarctica': 'בקר באנטארקטיקה!',
 };
 
 const Map<String, String> heAchievementDescriptions = {
@@ -234,6 +270,42 @@ const Map<String, String> heAchievementDescriptions = {
   'tourist-barcelona': 'התפעל מיצירות המופת של גאודי וחוף הים התיכון',
   'tourist-bali': 'מצא גן עדן בין המקדשים ומדרגות האורז של באלי',
   'tourist-machu-picchu': 'טייל אל המצודה העתיקה של האינקה בגובה האנדים',
+  // ── Volcanoes ──
+  'volcano-vesuvius': 'עמוד על שפת הלוע של הר הגעש שקבר את פומפיי',
+  'volcano-kilauea': 'צפה בהר הגעש הפעיל ביותר בהוואי ובאגם הלבה הזוהר שלו',
+  'volcano-krakatoa': 'הפלג אל בנו של הר הגעש שהתפרצותו ב־1883 הרעידה את העולם',
+  'volcano-stromboli': 'צפה במגדלור הים התיכון מתפרץ כל כמה דקות',
+  'volcano-eyjafjallajokull': 'טייל מעל הר הגעש הקרחוני שהשבית את שמי אירופה ב־2010',
+  'volcano-mayon': 'התפעל מהקונוס הוולקני המושלם ביותר בעולם בפיליפינים',
+  'volcano-pinatubo': 'טייל אל אגם המכתש של הר הגעש שהתפרצותו ב־1991 קיררה את כדור הארץ',
+  'volcano-erta-ale': 'עמוד על שפת אגם הלבה הקבוע של ההר המעשן במדבר דנקיל',
+  'volcano-villarrica': 'טפס על אחד מהרי הגעש הפעילים ביותר בדרום אמריקה מעל אגמי צ\'ילה',
+  // ── Waterfalls ──
+  'wf-niagara': 'הרגש את שאגת המפלים החזקים ביותר בצפון אמריקה בגבול ארה"ב-קנדה',
+  'wf-iguazu': 'עמוד מול גרון השטן, שם 275 מפלים שואגים בגבול ארגנטינה-ברזיל',
+  'wf-victoria': 'צפה ב"עשן הרועם" על נהר הזמבזי בין זמביה לזימבבואה',
+  'wf-angel': 'הבט מעלה אל המפל הרציף הגבוה בעולם בג\'ונגל קנאימה בוונצואלה',
+  'wf-plitvice': 'טייל בשבילי העץ מתחת למפל הגבוה ביותר בקרואטיה באגמי פליטביצה',
+  'wf-gullfoss': 'צפה במפלי הזהב צוללים לתוך קניון במסלול המעגל הזהוב באיסלנד',
+  'wf-yosemite': 'טפס לבסיס המפל הגבוה ביותר בצפון אמריקה בעמק יוסמיטי',
+  'wf-kaieteur': 'עמוד על שפת הצוק של אחד המפלים החזקים בעולם בגיאנה',
+  'wf-sutherland': 'צעד במסלול מילפורד אל אחד המפלים הגבוהים ביותר בניו זילנד',
+  'wf-detian': 'בקר במפל החוצה גבולות הגדול ביותר באסיה, בגבול סין-וייטנאם',
+  'wf-jog': 'התפעל מצלילתו המרהיבה של נהר השרבטי בקרנטקה, הודו',
+  'wf-skogafoss': 'צעד אל בסיס המפל המקושת בקשת בענן בחוף הדרומי של איסלנד',
+  'wf-seljalandsfoss': 'הלך מאחורי וילון המים באחד המפלים המצולמים ביותר באיסלנד',
+  // ── Glaciers & Ice ──
+  'glacier-perito-moreno': 'עמוד מול חזית הקרחון של אחד הקרחונים הבודדים בעולם שעדיין מתקדם — חומה של קרח כחול בפטגוניה הארגנטינאית',
+  'glacier-vatnajokull': 'חצה את כיפת הקרח הגדולה באירופה — מדף קרח של 7,900 קמ"ר המכסה 8% מאיסלנד ומסתיר הרי געש תת־קרחוניים',
+  'glacier-aletsch': 'הלך מעל הקרחון הארוך ביותר באלפים — נהר קרח באורך 23 ק"מ היורד מאזור היונגפראו בשווייץ',
+  'glacier-jostedalsbreen': 'טייל למרגלות הקרחון הגדול ביותר באירופה היבשתית — כיפת קרח של 474 קמ"ר במערב נורווגיה',
+  'glacier-athabasca': 'טוס במכונית שלג על אחת הלשונות של שדה הקרח קולומביה — שדה הקרח הגדול בהרי הרוקי הקנדיים',
+  'glacier-mendenhall': 'טייל אל פני קרחון כחול זוהר ממש מחוץ לג\'ונו — לשון של 21 ק"מ היורדת משדה הקרח של ג\'ונו באלסקה',
+  'glacier-franz-josef': 'הלך על מורנת קרחון הגשם הממוזג — נהר קרח של 12 ק"מ הזורם כמעט עד לים בחוף המערבי של ניו זילנד',
+  'glacier-fox': 'טייל בעמק הסלעי של קרחון פוקס — קרחון אחות של פרנץ יוזף, היורד מהאלפים הדרומיים',
+  'glacier-antarctic-shelves': 'דרוך על היבשת הלבנה — מדפי קרח צפים כמו רוס, רון ופילצ\'נר מכסים שטח גדול מגרינלנד',
+  // ── Continents ──
+  'continent-antarctica': 'הגע ליבשת הלבנה בקצה העולם בפעם הראשונה',
 };
 
 // ── Collections ──
@@ -249,7 +321,15 @@ const Map<String, String> heCollectionNames = {
   'ski-resorts': 'אתרי סקי',
   'capitals': 'בירות העולם',
   'ancient-sites': 'אתרים דתיים עתיקים',
+  'holy-sites': 'אתרים קדושים',
+  'seas': 'ימים',
   'tourist-destinations': 'יעדים תיירותיים פופולריים',
+  'glaciers': 'קרחונים וקרח',
+  'volcanoes': 'הרי געש',
+  'waterfalls': 'מפלים',
+  'mountains': 'הרים איקוניים',
+  'world-wonders': 'פלאי תבל',
+  'deserts': 'מדבריות',
 };
 
 const Map<String, String> heSkillNames = {

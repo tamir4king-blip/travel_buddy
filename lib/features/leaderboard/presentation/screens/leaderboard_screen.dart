@@ -9,11 +9,21 @@ import 'package:travel_buddy_mobile/shared/providers/leaderboard_provider.dart';
 import 'package:travel_buddy_mobile/shared/widgets/responsive_layout.dart';
 import 'package:travel_buddy_mobile/shared/widgets/visual_extras.dart';
 
-class LeaderboardScreen extends ConsumerWidget {
+class LeaderboardScreen extends ConsumerStatefulWidget {
   const LeaderboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(leaderboardProvider);
     final notifier = ref.read(leaderboardProvider.notifier);

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -109,10 +111,39 @@ class GeolocationNotifier extends StateNotifier<GeolocationState> {
     if (!state.hasPermission) await requestPermission();
     if (!state.hasPermission) return;
 
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // 10m movement threshold
-    );
+    // Use platform-specific settings for background location tracking
+    final LocationSettings locationSettings;
+
+    if (!kIsWeb && Platform.isAndroid) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+        // Keep tracking alive in the background with a foreground service
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationText: 'Tracking your location for nearby trophies',
+          notificationTitle: 'Travel Buddy',
+          enableWakeLock: true,
+          notificationIcon: AndroidResource(
+            name: 'ic_launcher',
+            defType: 'mipmap',
+          ),
+        ),
+      );
+    } else if (!kIsWeb && Platform.isIOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: true,
+        allowBackgroundLocationUpdates: true,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      );
+    }
 
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: locationSettings,

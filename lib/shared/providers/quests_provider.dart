@@ -1,8 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_buddy_mobile/core/config/supabase_config.dart';
+import 'package:travel_buddy_mobile/core/utils/error_logger.dart';
 import 'package:travel_buddy_mobile/shared/models/side_quest.dart';
+import 'package:travel_buddy_mobile/shared/providers/auth_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/user_profile_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/persistence_provider.dart';
+import 'package:travel_buddy_mobile/shared/providers/supabase_provider.dart';
 import 'package:travel_buddy_mobile/shared/data/quest_registry.dart';
+import 'package:travel_buddy_mobile/shared/data/skill_registry.dart';
+import 'package:travel_buddy_mobile/shared/utils/xp_rules.dart';
 
 class QuestsState {
   final List<SideQuest> allQuests;
@@ -67,6 +73,14 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
 
   QuestsNotifier(this.ref) : super(const QuestsState()) {
     _loadQuests();
+    _syncFromRemote();
+
+    // Re-sync when auth state changes (e.g. after login on a fresh install)
+    ref.listen(authProvider, (prev, next) {
+      if (next.isAuthenticated && !(prev?.isAuthenticated ?? false)) {
+        _syncFromRemote();
+      }
+    });
   }
 
   void _loadQuests() {
@@ -84,7 +98,7 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
     // Calculate skill levels from XP
     final skillLevels = <String, int>{};
     for (final entry in skillXp.entries) {
-      skillLevels[entry.key] = _calculateSkillLevel(entry.value);
+      skillLevels[entry.key] = _calculateSkillLevel(entry.value, entry.key);
     }
 
     // Merge saved completions onto quest registry
@@ -112,6 +126,11 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
   }
 
   void _persist() {
+    _persistLocally();
+    _syncToRemote();
+  }
+
+  void _persistLocally() {
     final persistence = ref.read(persistenceServiceProvider);
 
     // Save quest completions
@@ -124,6 +143,187 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
     persistence.saveCompletedQuests(completions);
     persistence.saveSkillXp(state.skillXp);
     persistence.saveStreakData(state.currentStreak, state.lastCompletionDate);
+  }
+
+  /// Push quest completions, skill XP, and streak to Supabase.
+  Future<void> _syncToRemote() async {
+    if (!SupabaseConfig.isConfigured) return;
+    try {
+      final client = ref.read(supabaseClientProvider);
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // Upsert quest completions
+      for (final q in state.allQuests) {
+        if (q.completionCount > 0) {
+          await client.from('user_quest_completions').upsert({
+            'user_id': userId,
+            'quest_id': q.id,
+            'completion_count': q.completionCount,
+          }, onConflict: 'user_id,quest_id');
+        }
+      }
+
+      // Upsert skill XP
+      for (final entry in state.skillXp.entries) {
+        if (entry.value > 0) {
+          await client.from('user_skill_xp').upsert({
+            'user_id': userId,
+            'skill_id': entry.key,
+            'xp': entry.value,
+          }, onConflict: 'user_id,skill_id');
+        }
+      }
+
+      // Sync streak to profiles table
+      await client.from('profiles').update({
+        'current_streak': state.currentStreak,
+        'last_completion_date': state.lastCompletionDate?.toIso8601String(),
+      }).eq('id', userId);
+    } catch (e, st) {
+      // Local data is primary
+      logError(e, st, context: 'quests.syncStreakToRemote', report: true);
+    }
+  }
+
+  /// Pull quest completions, skill XP, and streak from Supabase and merge.
+  Future<void> _syncFromRemote() async {
+    if (!SupabaseConfig.isConfigured) return;
+    try {
+      final client = ref.read(supabaseClientProvider);
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // Fetch quest completions
+      final questRows = await client
+          .from('user_quest_completions')
+          .select()
+          .eq('user_id', userId);
+
+      // Fetch skill XP
+      final skillRows = await client
+          .from('user_skill_xp')
+          .select()
+          .eq('user_id', userId);
+
+      // Fetch streak from profiles
+      final profileRows = await client
+          .from('profiles')
+          .select('current_streak, last_completion_date')
+          .eq('id', userId);
+
+      if (questRows.isEmpty && skillRows.isEmpty) {
+        // No remote data — push local state
+        _syncToRemote();
+        return;
+      }
+
+      // Build remote maps
+      final remoteCompletions = <String, int>{};
+      for (final row in questRows) {
+        final id = row['quest_id'] as String?;
+        final count = row['completion_count'] as int? ?? 0;
+        if (id != null && count > 0) remoteCompletions[id] = count;
+      }
+
+      final remoteSkillXp = <String, int>{};
+      for (final row in skillRows) {
+        final id = row['skill_id'] as String?;
+        final xp = row['xp'] as int? ?? 0;
+        if (id != null && xp > 0) remoteSkillXp[id] = xp;
+      }
+
+      final remoteStreak = profileRows.isNotEmpty
+          ? (profileRows.first['current_streak'] as int? ?? 0)
+          : 0;
+      final remoteLastDate = profileRows.isNotEmpty &&
+              profileRows.first['last_completion_date'] != null
+          ? DateTime.tryParse(
+              profileRows.first['last_completion_date'] as String)
+          : null;
+
+      // Merge: take the higher value for each entry
+      var changed = false;
+
+      final mergedCompletions = Map<String, int>.from(_currentCompletions());
+      for (final entry in remoteCompletions.entries) {
+        final local = mergedCompletions[entry.key] ?? 0;
+        if (entry.value > local) {
+          mergedCompletions[entry.key] = entry.value;
+          changed = true;
+        }
+      }
+
+      final mergedSkillXp = Map<String, int>.from(state.skillXp);
+      for (final entry in remoteSkillXp.entries) {
+        final local = mergedSkillXp[entry.key] ?? 0;
+        if (entry.value > local) {
+          mergedSkillXp[entry.key] = entry.value;
+          changed = true;
+        }
+      }
+
+      final mergedStreak = remoteStreak > state.currentStreak
+          ? remoteStreak
+          : state.currentStreak;
+      final mergedLastDate =
+          _laterDate(state.lastCompletionDate, remoteLastDate);
+
+      if (remoteStreak > state.currentStreak) changed = true;
+
+      if (changed) {
+        // Rebuild quest list with merged completions
+        final mergedQuests = questRegistry.map((q) {
+          final count = mergedCompletions[q.id];
+          if (count != null && count > 0) {
+            return q.copyWith(completionCount: count, isCompleted: true);
+          }
+          return q;
+        }).toList();
+
+        // Recalculate skill levels
+        final mergedSkillLevels = <String, int>{};
+        for (final entry in mergedSkillXp.entries) {
+          mergedSkillLevels[entry.key] =
+              _calculateSkillLevel(entry.value, entry.key);
+        }
+
+        state = state.copyWith(
+          allQuests: mergedQuests,
+          skillXp: mergedSkillXp,
+          skillLevels: mergedSkillLevels,
+          currentStreak: mergedStreak,
+          lastCompletionDate: mergedLastDate,
+        );
+        _persistLocally();
+      }
+
+      // Push any locally-higher values to remote
+      await _syncToRemote();
+
+      // Server-side triggers may have just awarded XP for completions that
+      // only existed locally — pull the authoritative total back down.
+      await ref.read(userProfileProvider.notifier).reloadFromRemote();
+    } catch (e, st) {
+      // Local data is primary
+      logError(e, st, context: 'quests.syncWithRemote', report: true);
+    }
+  }
+
+  Map<String, int> _currentCompletions() {
+    final completions = <String, int>{};
+    for (final q in state.allQuests) {
+      if (q.completionCount > 0) {
+        completions[q.id] = q.completionCount;
+      }
+    }
+    return completions;
+  }
+
+  static DateTime? _laterDate(DateTime? a, DateTime? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a.isAfter(b) ? a : b;
   }
 
   void setCategoryFilter(String? category) {
@@ -162,22 +362,25 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
     updatedQuests[index] = completed;
 
     // Calculate XP with diminishing returns for repeats
-    var xpEarned = _calculateQuestXp(quest.xpReward, newCount);
+    final xpEarned = XpRules.questXp(quest.xpReward, newCount);
 
-    // 15% bonus XP when photos are provided
+    // 15% bonus on *skill* XP when photos are provided. Profile/total XP
+    // stays unboosted so it matches the server-side award (the server
+    // can't verify photos — see XpRules.withPhotoBonus).
+    var skillXpEarned = xpEarned;
     if (photos != null && photos.isNotEmpty) {
-      xpEarned = (xpEarned * 1.15).round();
+      skillXpEarned = XpRules.withPhotoBonus(xpEarned);
     }
 
     // Update skill XP
     final updatedSkillXp = Map<String, int>.from(state.skillXp);
     final currentSkillXp = updatedSkillXp[quest.skillType] ?? 0;
-    updatedSkillXp[quest.skillType] = currentSkillXp + xpEarned;
+    updatedSkillXp[quest.skillType] = currentSkillXp + skillXpEarned;
 
     // Update skill level
     final updatedSkillLevels = Map<String, int>.from(state.skillLevels);
     updatedSkillLevels[quest.skillType] =
-        _calculateSkillLevel(updatedSkillXp[quest.skillType]!);
+        _calculateSkillLevel(updatedSkillXp[quest.skillType]!, quest.skillType);
 
     // Update streak
     final now = DateTime.now();
@@ -239,7 +442,7 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
 
     final updatedSkillLevels = Map<String, int>.from(state.skillLevels);
     updatedSkillLevels[quest.skillType] =
-        _calculateSkillLevel(updatedSkillXp[quest.skillType]!);
+        _calculateSkillLevel(updatedSkillXp[quest.skillType]!, quest.skillType);
 
     state = state.copyWith(
       allQuests: updatedQuests,
@@ -271,7 +474,7 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
 
     final updatedSkillLevels = Map<String, int>.from(state.skillLevels);
     updatedSkillLevels[quest.skillType] =
-        _calculateSkillLevel(updatedSkillXp[quest.skillType]!);
+        _calculateSkillLevel(updatedSkillXp[quest.skillType]!, quest.skillType);
 
     state = state.copyWith(
       allQuests: updatedQuests,
@@ -296,19 +499,12 @@ class QuestsNotifier extends StateNotifier<QuestsState> {
     _persist();
   }
 
-  int _calculateQuestXp(int baseXp, int completionCount) {
-    // Diminishing returns: 100%, 75%, 50%, 25% for repeats
-    if (completionCount <= 1) return baseXp;
-    if (completionCount == 2) return (baseXp * 0.75).round();
-    if (completionCount == 3) return (baseXp * 0.50).round();
-    return (baseXp * 0.25).round();
-  }
-
-  int _calculateSkillLevel(int skillXp) {
-    // 350-700 XP per level, max level 50
-    const xpPerLevel = 500;
+  int _calculateSkillLevel(int skillXp, String skillType) {
+    final skill = getSkillById(skillType);
+    final xpPerLevel = skill?.xpPerLevel ?? 500;
+    final maxLevel = skill?.maxLevel ?? 50;
     final level = (skillXp / xpPerLevel).floor() + 1;
-    return level.clamp(1, 50);
+    return level.clamp(1, maxLevel);
   }
 }
 

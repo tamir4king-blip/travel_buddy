@@ -5,7 +5,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:travel_buddy_mobile/core/theme/app_theme.dart';
 import 'package:travel_buddy_mobile/shared/data/country_details_registry.dart';
 import 'package:travel_buddy_mobile/shared/models/achievement.dart';
-import 'package:travel_buddy_mobile/shared/widgets/visual_extras.dart';
 
 class CountryDetailScreen extends StatefulWidget {
   final Achievement achievement;

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 import 'package:travel_buddy_mobile/core/config/supabase_config.dart';
+import 'package:travel_buddy_mobile/features/auth/data/auth_repository.dart';
 import 'package:travel_buddy_mobile/shared/models/user_profile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 class AuthState {
   final UserProfile? user;
@@ -33,20 +34,17 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  final AuthRepository _repo;
   StreamSubscription<sb.AuthState>? _authSubscription;
 
-  AuthNotifier() : super(const AuthState()) {
+  AuthNotifier(this._repo) : super(const AuthState()) {
     if (SupabaseConfig.isConfigured) {
       _initSupabaseAuth();
     }
-    // If Supabase is not configured, stay unauthenticated on the login screen
   }
 
-  sb.SupabaseClient get _client => sb.Supabase.instance.client;
-
   void _initSupabaseAuth() {
-    // Check if there's already a signed-in session
-    final currentUser = _client.auth.currentUser;
+    final currentUser = _repo.currentUser;
     if (currentUser != null) {
       state = AuthState(
         user: _userProfileFromSupabase(currentUser),
@@ -54,8 +52,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     }
 
-    // Listen for auth state changes (sign in, sign out, token refresh)
-    _authSubscription = _client.auth.onAuthStateChange.listen((authState) {
+    _authSubscription = _repo.authStateChanges.listen((authState) {
       final user = authState.session?.user;
       if (user != null) {
         state = AuthState(
@@ -93,11 +90,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      await _client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      // Auth state listener will update the state
+      await _repo.signIn(email, password);
     } on sb.AuthException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (e) {
@@ -120,12 +113,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      await _client.auth.signUp(
-        email: email,
-        password: password,
-        data: {'display_name': displayName},
-      );
-      // Auth state listener will update the state
+      await _repo.signUp(email, password, displayName);
     } on sb.AuthException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (e) {
@@ -138,7 +126,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> signOut() async {
     if (SupabaseConfig.isConfigured) {
-      await _client.auth.signOut();
+      await _repo.signOut();
     }
     state = const AuthState();
   }
@@ -155,5 +143,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(
-  (ref) => AuthNotifier(),
+  (ref) => AuthNotifier(ref.watch(authRepositoryProvider)),
 );

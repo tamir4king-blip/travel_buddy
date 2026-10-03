@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_buddy_mobile/core/config/supabase_config.dart';
+import 'package:travel_buddy_mobile/core/utils/error_logger.dart';
 import 'package:travel_buddy_mobile/shared/models/master_achievement.dart';
 import 'package:travel_buddy_mobile/shared/models/user_profile.dart';
 import 'package:travel_buddy_mobile/shared/data/master_achievement_registry.dart';
 import 'package:travel_buddy_mobile/shared/providers/achievements_provider.dart';
+import 'package:travel_buddy_mobile/shared/providers/auth_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/quests_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/user_profile_provider.dart';
 import 'package:travel_buddy_mobile/shared/providers/persistence_provider.dart';
+import 'package:travel_buddy_mobile/shared/providers/supabase_provider.dart';
 
 class MasterAchievementsState {
   final List<MasterAchievement> allMasterAchievements;
@@ -45,7 +49,15 @@ class MasterAchievementsNotifier extends StateNotifier<MasterAchievementsState> 
 
   MasterAchievementsNotifier(this.ref) : super(const MasterAchievementsState()) {
     _loadMasterAchievements();
+    _syncFromRemote();
     _listenToChanges();
+
+    // Re-sync when auth state changes (e.g. after login on a fresh install)
+    ref.listen(authProvider, (prev, next) {
+      if (next.isAuthenticated && !(prev?.isAuthenticated ?? false)) {
+        _syncFromRemote();
+      }
+    });
   }
 
   void _loadMasterAchievements() {
@@ -71,6 +83,74 @@ class MasterAchievementsNotifier extends StateNotifier<MasterAchievementsState> 
     final persistence = ref.read(persistenceServiceProvider);
     final unlockedIds = state.unlockedMasterAchievements.map((m) => m.id).toSet();
     persistence.saveMasterAchievementIds(unlockedIds);
+    _syncMasterIdsToRemote(unlockedIds);
+  }
+
+  /// Push each unlocked master achievement to the user_master_achievements table.
+  Future<void> _syncMasterIdsToRemote(Set<String> ids) async {
+    if (!SupabaseConfig.isConfigured) return;
+    try {
+      final client = ref.read(supabaseClientProvider);
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      for (final id in ids) {
+        await client.from('user_master_achievements').upsert({
+          'user_id': userId,
+          'master_achievement_id': id,
+        }, onConflict: 'user_id,master_achievement_id');
+      }
+    } catch (e, st) {
+      logError(e, st, context: 'masterAchievements.syncToRemote',
+          report: true);
+    }
+  }
+
+  /// Pull master achievement IDs from Supabase.
+  Future<void> _syncFromRemote() async {
+    if (!SupabaseConfig.isConfigured) return;
+    try {
+      final client = ref.read(supabaseClientProvider);
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final rows = await client
+          .from('user_master_achievements')
+          .select('master_achievement_id')
+          .eq('user_id', userId);
+
+      if (rows.isEmpty) return;
+
+      final remoteIds = rows
+          .map((r) => r['master_achievement_id'] as String)
+          .toSet();
+
+      final localIds = state.unlockedMasterAchievements.map((m) => m.id).toSet();
+      final newIds = remoteIds.difference(localIds);
+      if (newIds.isEmpty) return;
+
+      // Merge remote IDs into local state
+      final allIds = localIds.union(remoteIds);
+      final updated = masterAchievementRegistry.map((m) {
+        if (allIds.contains(m.id)) {
+          return m.copyWith(isUnlocked: true, progress: 1.0);
+        }
+        return m;
+      }).toList();
+
+      final achievements = _calculateProgress(updated);
+      state = state.copyWith(
+        allMasterAchievements: achievements,
+        unlockedMasterAchievements: achievements.where((m) => m.isUnlocked).toList(),
+      );
+
+      // Persist merged state locally
+      final persistence = ref.read(persistenceServiceProvider);
+      persistence.saveMasterAchievementIds(allIds);
+    } catch (e, st) {
+      logError(e, st, context: 'masterAchievements.syncFromRemote',
+          report: true);
+    }
   }
 
   void _listenToChanges() {

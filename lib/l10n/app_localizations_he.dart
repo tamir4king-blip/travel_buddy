@@ -132,6 +132,9 @@ class AppLocalizationsHe extends AppLocalizations {
   String get totalXp => 'סה\"כ XP';
 
   @override
+  String get totalSkillLevel => 'רמת מיומנות';
+
+  @override
   String get level => 'רמה';
 
   @override
@@ -804,6 +807,9 @@ class AppLocalizationsHe extends AppLocalizations {
   String get heatmapOther => 'אחר';
 
   @override
+  String get achievementUnlocked => '!הישג נפתח';
+
+  @override
   String get unlockTimeline => 'ציר זמן פתיחות';
 
   @override
@@ -817,4 +823,46 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get mapFilterSkills => 'כישורים';
+
+  @override
+  String get mapCloseMap => 'סגור מפה';
+
+  @override
+  String get mapZoomIn => 'הגדל';
+
+  @override
+  String get mapZoomOut => 'הקטן';
+
+  @override
+  String get mapResetCompass => 'אפס מצפן';
+
+  @override
+  String get mapMyLocation => 'המיקום שלי';
+
+  @override
+  String get mapFilters => 'מסננים';
+
+  @override
+  String get mapNearby => 'בקרבת מקום';
+
+  @override
+  String get mapActiveQuests => 'משימות פעילות';
+
+  @override
+  String get mapCompletedFilter => 'הושלמו';
+
+  @override
+  String get mapStartQuestHere => 'להתחיל משימה כאן?';
+
+  @override
+  String get mapLogVisit => 'רשום ביקור';
+
+  @override
+  String get mapViewDetails => 'הצג פרטים';
+
+  @override
+  String get mapFilterByType => 'סנן לפי סוג';
+
+  @override
+  String get mapFilterByStatus => 'סנן לפי סטטוס';
 }

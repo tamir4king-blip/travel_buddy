@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_buddy_mobile/features/auth/presentation/screens/auth_screen.dart';
-import 'package:travel_buddy_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:travel_buddy_mobile/features/achievements/presentation/screens/achievements_screen.dart';
 import 'package:travel_buddy_mobile/features/quests/presentation/screens/quests_screen.dart';
 import 'package:travel_buddy_mobile/features/profile/presentation/screens/profile_screen.dart';
@@ -20,6 +19,10 @@ import 'package:travel_buddy_mobile/features/dev_panel/presentation/screens/achi
 import 'package:travel_buddy_mobile/features/dev_panel/presentation/screens/quest_editor_screen.dart';
 import 'package:travel_buddy_mobile/features/dev_panel/presentation/screens/data_management_screen.dart';
 import 'package:travel_buddy_mobile/features/dev_panel/presentation/screens/debug_tools_screen.dart';
+import 'package:travel_buddy_mobile/features/dev_panel/presentation/screens/polygon_editor_screen.dart';
+import 'package:travel_buddy_mobile/features/dev_panel/presentation/screens/change_history_screen.dart';
+import 'package:travel_buddy_mobile/features/skills/presentation/screens/skill_detail_screen.dart';
+import 'package:travel_buddy_mobile/features/skills/presentation/screens/activity_detail_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -62,6 +65,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AppSettingsScreen(),
       ),
       GoRoute(
+        path: '/skills/:skillId',
+        builder: (context, state) => SkillDetailScreen(
+          skillId: state.pathParameters['skillId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/skills/:skillId/activity/:activityId',
+        builder: (context, state) => ActivityDetailScreen(
+          skillId: state.pathParameters['skillId']!,
+          activityId: state.pathParameters['activityId']!,
+        ),
+      ),
+      GoRoute(
         path: '/dev-panel',
         builder: (context, state) => const DevPanelScreen(),
       ),
@@ -85,14 +101,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/dev-panel/debug',
         builder: (context, state) => const DebugToolsScreen(),
       ),
+      GoRoute(
+        path: '/dev-panel/polygon-editor',
+        builder: (context, state) => const PolygonEditorScreen(),
+      ),
+      GoRoute(
+        path: '/dev-panel/history',
+        builder: (context, state) => const ChangeHistoryScreen(),
+      ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) => AppShell(child: child),
         routes: [
           GoRoute(
             path: '/',
+            // The map IS the home — AppShell renders the persistent canvas
+            // and the menu sheet; the route child is just a placeholder.
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: HomeScreen(),
+              child: SizedBox.shrink(),
             ),
           ),
           GoRoute(
@@ -129,6 +155,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/profile',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: ProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/map',
+            // The MapScreen is mounted persistently inside AppShell so its
+            // camera/zoom/native-view state survives navigating to other tabs.
+            // The route itself only signals presence — AppShell renders the map.
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: SizedBox.shrink(),
             ),
           ),
         ],

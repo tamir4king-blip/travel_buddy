@@ -42,6 +42,7 @@
   "exploreCity": "חקור את {city}",
 
   "totalXp": "סה\"כ XP",
+  "totalSkillLevel": "רמת מיומנות",
   "level": "רמה",
   "trophies": "גביעים",
   "account": "חשבון",
@@ -286,10 +287,27 @@
   "@heatmapUnlockedOfTotal": { "placeholders": { "unlocked": { "type": "int" }, "total": { "type": "int" } } },
   "heatmapOther": "אחר",
 
+  "achievementUnlocked": "!הישג נפתח",
+
   "unlockTimeline": "ציר זמן פתיחות",
   "noUnlockedTrophiesYet": "עדיין לא נפתחו גביעים.",
 
   "mapFilterAchievements": "הישגים",
   "mapFilterQuests": "משימות",
-  "mapFilterSkills": "כישורים"
+  "mapFilterSkills": "כישורים",
+
+  "mapCloseMap": "סגור מפה",
+  "mapZoomIn": "הגדל",
+  "mapZoomOut": "הקטן",
+  "mapResetCompass": "אפס מצפן",
+  "mapMyLocation": "המיקום שלי",
+  "mapFilters": "מסננים",
+  "mapNearby": "בקרבת מקום",
+  "mapActiveQuests": "משימות פעילות",
+  "mapCompletedFilter": "הושלמו",
+  "mapStartQuestHere": "להתחיל משימה כאן?",
+  "mapLogVisit": "רשום ביקור",
+  "mapViewDetails": "הצג פרטים",
+  "mapFilterByType": "סנן לפי סוג",
+  "mapFilterByStatus": "סנן לפי סטטוס"
 }

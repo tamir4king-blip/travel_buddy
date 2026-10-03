@@ -150,6 +150,20 @@ class DebugToolsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
+          // Test Sentry Crash
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => throw Exception('Sentry test crash'),
+              child: const Text('Test Sentry Crash'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
           // Force Refresh
           SizedBox(
             width: double.infinity,
