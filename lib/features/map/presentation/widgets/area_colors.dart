@@ -47,6 +47,21 @@ const _collectionColors = <String, Color>{
   'lakes': Color(0xFF1E88E5), // bright lake blue
   'seas': Color(0xFF0277BD), // deep ocean blue
   'glaciers': Color(0xFF80DEEA), // pale ice blue
+  // Israel Explorer lists
+  'il-regions': Color(0xFF7E57C2), // purple
+  'il-cities': Color(0xFF5C6BC0), // indigo
+  'il-villages': Color(0xFFA1887F), // warm stone
+  'il-unesco': Color(0xFFD4AC0D), // gold
+  'il-national-parks': Color(0xFF2E7D32), // deep green
+  'il-nature': Color(0xFF558B2F), // olive green
+  'il-water': Color(0xFF1E88E5), // spring blue
+  'il-coast': Color(0xFF00ACC1), // cyan
+  'il-heights': Color(0xFF8D6E63), // rock brown
+  'il-heritage': Color(0xFFB07A2E), // amber stone
+  'il-sacred': Color(0xFFEAD7A0), // pale gold
+  'il-museums': Color(0xFFD81B60), // magenta
+  'il-food': Color(0xFFF57C00), // orange
+  'il-experiences': Color(0xFFE53935), // red
 };
 
 const _continentColors = <String, Color>{

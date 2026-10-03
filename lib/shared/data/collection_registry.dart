@@ -1,3 +1,5 @@
+import 'package:travel_buddy_mobile/shared/data/israel/israel_catalog.dart';
+
 class CollectionInfo {
   final String id;
   final String name;
@@ -41,10 +43,21 @@ const collectionRegistry = <CollectionInfo>[
   CollectionInfo(id: 'zones', name: 'Zones', icon: '📍', bonusXp: 50),
 ];
 
+/// The Israel Explorer lists, as collections.
+final israelCollectionRegistry = <CollectionInfo>[
+  for (final l in IsraelList.values)
+    CollectionInfo(id: l.id, name: l.name, icon: l.emoji, bonusXp: l.bonusXp),
+];
+
+/// Every collection: the world registry plus the Israel lists.
+final allCollectionInfos = <CollectionInfo>[
+  ...collectionRegistry,
+  ...israelCollectionRegistry,
+];
+
 CollectionInfo? getCollectionInfo(String id) {
-  try {
-    return collectionRegistry.firstWhere((c) => c.id == id);
-  } catch (_) {
-    return null;
+  for (final c in allCollectionInfos) {
+    if (c.id == id) return c;
   }
+  return null;
 }

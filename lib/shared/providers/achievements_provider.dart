@@ -13,6 +13,7 @@ import 'package:travel_buddy_mobile/shared/data/travel_achievement_registry.dart
 import 'package:travel_buddy_mobile/shared/data/lakes_achievement_registry.dart';
 import 'package:travel_buddy_mobile/shared/data/glaciers_achievement_registry.dart';
 import 'package:travel_buddy_mobile/shared/data/deserts_achievement_registry.dart';
+import 'package:travel_buddy_mobile/shared/data/israel/israel_catalog.dart';
 import 'package:travel_buddy_mobile/shared/data/local_achievement_registry.dart';
 import 'package:travel_buddy_mobile/shared/data/collection_registry.dart';
 import 'package:travel_buddy_mobile/shared/providers/achievement_definitions_provider.dart';
@@ -825,6 +826,9 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     'south-america',   // South American countries
     'oceania',         // Oceania countries
     'capitals',        // World capitals (country-level)
+    // Israel regions, cities and villages — people live and commute in
+    // them, so an hourly revisit would fire constantly.
+    ...israelExtendedCooldownListIds,
   };
 
   /// Returns the revisit cooldown for a given achievement based on its type.
@@ -1188,11 +1192,12 @@ final achievementsProvider =
 );
 
 // Combined achievement registry: local Netanya + travel + lakes + glaciers
-// + deserts.
+// + deserts + the Israel Explorer lists.
 final achievementRegistry = <Achievement>[
   ...localAchievementRegistry,
   ...travelAchievementRegistry,
   ...lakesAchievementRegistry,
   ...glaciersAchievementRegistry,
   ...desertsAchievementRegistry,
+  ...israelAchievementRegistry,
 ];

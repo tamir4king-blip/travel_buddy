@@ -1,6 +1,9 @@
 import 'dart:ui';
 
 import 'package:travel_buddy_mobile/l10n/registry_translations_he.dart';
+import 'package:travel_buddy_mobile/shared/data/israel/israel_catalog.dart';
+import 'package:travel_buddy_mobile/shared/data/israel/israel_activity_quests.dart';
+import 'package:travel_buddy_mobile/shared/data/israel/israel_master_achievements.dart';
 
 /// Localized lookup for registry data (quests, skills, achievements, collections).
 /// Falls back to the English string if no translation is found for the locale.
@@ -11,7 +14,7 @@ class RegistryL10n {
 
   static String achievementTitle(Locale locale, String id, String fallback) {
     if (locale.languageCode == 'he') {
-      return heAchievementTitles[id] ?? fallback;
+      return heAchievementTitles[id] ?? israelHebrewTitles[id] ?? fallback;
     }
     return fallback;
   }
@@ -27,7 +30,7 @@ class RegistryL10n {
 
   static String collectionName(Locale locale, String id, String fallback) {
     if (locale.languageCode == 'he') {
-      return heCollectionNames[id] ?? fallback;
+      return heCollectionNames[id] ?? IsraelList.byId(id)?.he ?? fallback;
     }
     return fallback;
   }
@@ -52,14 +55,14 @@ class RegistryL10n {
 
   static String questTitle(Locale locale, String id, String fallback) {
     if (locale.languageCode == 'he') {
-      return heQuestTitles[id] ?? fallback;
+      return heQuestTitles[id] ?? israelQuestHebrew[id]?.$1 ?? fallback;
     }
     return fallback;
   }
 
   static String questDescription(Locale locale, String id, String fallback) {
     if (locale.languageCode == 'he') {
-      return heQuestDescriptions[id] ?? fallback;
+      return heQuestDescriptions[id] ?? israelQuestHebrew[id]?.$2 ?? fallback;
     }
     return fallback;
   }
@@ -68,14 +71,16 @@ class RegistryL10n {
 
   static String masterTitle(Locale locale, String id, String fallback) {
     if (locale.languageCode == 'he') {
-      return heMasterAchievementTitles[id] ?? fallback;
+      return heMasterAchievementTitles[id] ?? israelMasterHebrew[id]?.$1 ?? fallback;
     }
     return fallback;
   }
 
   static String masterDescription(Locale locale, String id, String fallback) {
     if (locale.languageCode == 'he') {
-      return heMasterAchievementDescriptions[id] ?? fallback;
+      return heMasterAchievementDescriptions[id] ??
+          israelMasterHebrew[id]?.$2 ??
+          fallback;
     }
     return fallback;
   }
